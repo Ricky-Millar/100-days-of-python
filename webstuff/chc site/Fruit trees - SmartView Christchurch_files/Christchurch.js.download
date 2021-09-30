@@ -1,0 +1,3345 @@
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "accessibel";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var details = [];
+    details.push({
+      label: "Description",
+      value: f.getProperty("description")
+    });
+    var popup = {
+      detail: true,
+      openDetails: true,
+      data: {
+        title: f.getProperty("name"),
+        details: details,
+        image: f.getProperty("image")
+      } // marker: feat
+
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  var zoomTimeout;
+  $mn.one("map/idle", function () {
+    $mn.isMap().addListener('zoom_changed', function () {
+      clearTimeout(zoomTimeout);
+      zoomTimeout = setTimeout(function () {
+        var map = $mn.isMap();
+        var visible = $mn.zoom() >= 16;
+        map.data.forEach(function (f) {
+          if (f.getProperty("feature") == _feature) {
+            map.data.overrideStyle(f, {
+              visible: visible
+            });
+          }
+        });
+      }, 100);
+    });
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var _icon2 = feat.getProperty("mapicon");
+
+      var visible = $mn.zoom() >= 16;
+      riot.util.misc.extend(_style, {
+        icon: {
+          url: _icon2,
+          scaledSize: app.conf.mapIconSize()
+        },
+        visible: visible,
+        strokeColor: "#3b69b2"
+      });
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "cantwait";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var details = [];
+    details.push({
+      svgIcon: "Location",
+      label: "Address",
+      value: f.getProperty("address")
+    });
+    var popup = {
+      detail: true,
+      openDetails: true,
+      data: {
+        title: f.getProperty("name"),
+        details: details
+      } // marker: feat
+
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  $mn.on('layer/loaded/' + _feature, function (list) {
+    app.alert.set({
+      title: "I Can't Wait",
+      msg: "Places and businesses that allow people with Crohn's disease, ulcerative colitis and other medical condition to use the facilities in the event a cardholder needs one urgently. More information at <a target=_blank href='https://crohnsandcolitis.org.nz/rh%20%27i%20can%27t%20wait%27%20card'>crohnsandcolitis.org.nz</a>"
+    });
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      riot.util.misc.extend(_style, {
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        },
+        strokeColor: "#3b69b2"
+      });
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "cdem";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  $mn.on('layer/loaded/' + _feature, function (list) {
+    var _legend = {
+      legend: {
+        list: [{
+          line: 'red',
+          label: 'Road closures'
+        }, {
+          line: 'orange',
+          label: 'Reduced to one lane'
+        }, {
+          icon: '/assets/publica/sets/Find_Pin_Map.svg',
+          label: "Flooding"
+        }]
+      }
+    };
+    app.maplegend.init(_legend.legend).update(); // app.tags.map.update(_legend)
+  });
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var details = [];
+    var data = f.getProperty("data");
+    if (data.LocationDescription) details.push({
+      svgIcon: "Location",
+      label: "Location",
+      value: data.LocationDescription
+    });
+    if (data.InformationDescription) details.push({
+      label: "Description",
+      value: data.InformationDescription
+    });
+    if (data.RoadClosureReason) details.push({
+      svgIcon: "Flag",
+      label: "Road Closure Reason",
+      value: data.RoadClosureReason
+    });
+    if (data.RoadClosureImpact) details.push({
+      svgIcon: "Warning",
+      label: "Road Closure Impact",
+      value: data.RoadClosureImpact
+    });
+    if (data.RoadClosureStart) details.push({
+      svgIcon: "Date",
+      label: "Start",
+      value: moment(data.RoadClosureStart).format("DD MMM YYYY hh:mm a")
+    });
+    if (data.RoadClosureEnd) details.push({
+      svgIcon: "Date",
+      label: "End",
+      value: moment(data.RoadClosureEnd).format("DD MMM YYYY hh:mm a")
+    });
+    if (data.InformationDescription) details.push({
+      label: "Description",
+      value: data.InformationDescription
+    });
+    if (data.RoadIncidentCause) details.push({
+      label: "Road Incident Cause",
+      value: data.RoadIncidentCause
+    });
+    if (data.RoadIncidentImpact) details.push({
+      svgIcon: "Warning",
+      label: "Road Incident Impact",
+      value: data.RoadIncidentImpact
+    });
+    if (data.RoadIncidentStart) details.push({
+      svgIcon: "Date",
+      label: "Start",
+      value: moment(data.RoadIncidentStart).format("DD MMM YYYY hh:mm a")
+    });
+    if (data.RoadIncidentEnd) details.push({
+      svgIcon: "Date",
+      label: "End",
+      value: moment(data.RoadIncidentEnd).format("DD MMM YYYY hh:mm a")
+    });
+    if (data.EstimatedReopening) details.push({
+      svgIcon: "Date",
+      label: "Estimated Reopening",
+      value: moment(data.EstimatedReopening).format("DD MMM YYYY hh:mm a")
+    });
+    var popup = {
+      detail: true,
+      openDetails: true,
+      data: {
+        title: data.LocationDescription ? data.LocationDescription : data.RoadIncidentCause,
+        details: details
+      } // marker: feat
+
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var linecolor = "red";
+
+      if (feat.getProperty("data") && feat.getProperty("data").RoadClosureImpact && feat.getProperty("data").RoadClosureImpact == "Reduced to one lane") {
+        linecolor = "orange";
+      }
+
+      riot.util.misc.extend(_style, {
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        },
+        strokeColor: linecolor
+      });
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "communityfacility";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  var _legend = {
+    list: [],
+    collapse: true,
+    filter: {
+      show: false,
+      options: []
+    }
+  };
+  var _filterListGroups = [],
+      _filterActive = false;
+
+  _legend.filter.callBack = function (options) {
+    if (options === false) {
+      $mn.isMap().data.forEach(function (a) {
+        if (a.getProperty('feature') == _feature) {
+          a.setProperty('visible', true);
+          $mn.isMap().data.overrideStyle(a, {
+            visible: true
+          });
+        }
+      });
+      _filterListGroups = [];
+      _filterActive = false;
+    } else {
+      var goodtypes = options.reduce(function (r, p) {
+        if (p.checked && p.group == "group") r.push(p.label);
+        return r;
+      }, []);
+      var badtypes = options.reduce(function (r, p) {
+        if (!p.checked && p.group == "group") r.push(p.label);
+        return r;
+      }, []);
+      _filterActive = true;
+      _filterListGroups = goodtypes;
+      $mn.isMap().data.forEach(function (a) {
+        if (a.getProperty('feature') == _feature) {
+          var visible = false;
+
+          if (goodtypes.length > 0) {
+            visible = goodtypes.some(function (b) {
+              return a.getProperty('shortType') == b;
+            });
+          } //feat.getProperty('activity')
+
+
+          a.setProperty('visible', visible);
+          $mn.isMap().data.overrideStyle(a, {
+            visible: visible
+          });
+        }
+      });
+    }
+  };
+
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var detaildata = {
+      title: f.getProperty("name"),
+      sub: f.getProperty("type")
+    };
+
+    if (f.getProperty("cccurl")) {
+      detaildata.buttons = [{
+        label: "Details and bookings",
+        action: function action() {
+          window.open(f.getProperty("cccurl"), "_blank");
+        }
+      }];
+    }
+
+    var popup = {
+      detail: true,
+      data: detaildata
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  }); // app.promise.map().then(() => app.tags.map.registerLegend(_feature, _legend.list, null, {collapsed:true, hide:false}));
+
+  $mn.on('layer/loaded/' + _feature, function (list) {
+    var colors = {};
+    list.forEach(function (a) {
+      colors[a.getProperty("shortType")] = a.getProperty("color");
+    });
+    _legend.filter.options = [];
+    _legend.list = Object.keys(colors).reduce(function (r, a) {
+      r.push({
+        label: a,
+        line: colors[a],
+        boundaryCheck: function boundaryCheck(f) {
+          return f.getProperty("shortType") == a;
+        }
+      });
+
+      _legend.filter.options.push({
+        group: "group",
+        label: a
+      });
+
+      return r;
+    }, []);
+    /* _legend.list.forEach( a => {
+        _legend.filter.options.push({group: "group", label: a.label});
+    }) */
+    //app.tags.map.updateLegend(_feature, _legend.list);
+
+    app.maplegend.init(_legend).update(); //app.promise.map().then(() => app.tags.map.registerLegend(_feature, _legend.list, null, {collapsed:true, hide:false}));
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var _icon = '/assets/publica/scripts/Find_Pin.php?color=' + encodeURIComponent(feat.getProperty('color'));
+
+      riot.util.misc.extend(_style, {
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        },
+        strokeColor: "#3b69b2"
+      });
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "waterusage";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var popup = {
+      detail: true,
+      data: {
+        title: "Water usage percentile",
+        sub: f.getProperty("rating"),
+        details: [{
+          label: "usage sum",
+          value: f.getProperty("sumusage") + "m³"
+        }, {
+          label: "allowance over limit sum",
+          value: f.getProperty("sumover") + "m³"
+        }]
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    console.log(f);
+    return;
+  });
+  app.promise.map().then(function () {
+    return app.tags.map.registerLegend(_feature, [{
+      line: "linear-gradient(to right, rgb(0,255,255), red)",
+      label: "water usage percentile 0 to 100"
+    }]);
+  }); //$mn.layers.delete("poweroutage"); $mn.isMap().data.addGeoJson(x);
+
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var p = feat.getProperty("rating");
+      var frac = p; //  frac += 100
+
+      var linecolor = _lib.colorGradient(frac, {
+        red: 0,
+        green: 255,
+        blue: 255
+      }, {
+        red: 255,
+        green: 0,
+        blue: 0
+      });
+
+      linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'; // linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'
+
+      var opacity = 0.8;
+      var linestyle = {
+        strokeWeight: 1,
+        strokeColor: "rgba(255, 255, 255, 0.5)",
+        fillColor: linecolor,
+        fillOpacity: opacity
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+
+riot.tag2('detail-emissions', '<virtual if="{detail}"> <div class="detailsection"> <div class="detail-flex detail-section detail-header-table margin-top"> <div> <div>Greenhouse gas emissions</div> </div> <div if="{!totalScreen}"> <select change="{yearType}" riot-value="{yearTypeValue}"> <option value="0">Calendar year</option> <option value="-6">CCC Financial year</option> <option value="r">12m rolling year</option> </select> </div> </div> <div class="detail-section detail-data detail-flex"> <header if="{!totalScreen}" class="{sticky:stickyHeader}"> <input type="range" style="width:100%" list="years" min="0" max="{maxMonth}" step="1" riot-value="{currentMonth}" input="{setMonth}" change="{setMonth}"> <div id="yearswrapper"> <div id="yearslider" riot-style="{sliderStyle()}"></div> <datalist id="years"> <option each="{month in months}" riot-value="{month}">{month%12==0?(month/12)+2017:\'\'}</option> </datalist> </div> <div class="headerdesc"> <h3 class="datedesc">{dateDesc()}</h3> <button click="{monthLess}" riot-style="visibility:{(currentMonth>0)?\'visible\':\'hidden\'}">&lt;</button> <button click="{monthMore}" riot-style="visibility:{(currentMonth<maxMonth)?\'visible\':\'hidden\'}">&gt;</button> </div> </header> <h2 class="datedesc">How are we tracking?</h2> <div> <div id="megapie"> <graph graph-data="{getDistributionPie()}"></graph> </div> <div id="megagraph"> <graph graph-data="{getGauge()}"></graph> <graph graph-data="{getMegaGraph()}"></graph> </div> </div> <div hide="{totalScreen}"> <h2 hide="{detailActive}" class="datedesc">Transport</h2> <div hide="{detailActive&&!datasets.fuel.detail}" class="dataset"> <detail-emissions-fuel class="detail-flex"></detail-emissions-fuel> </div> <div class="info border20"> <div hide="{detailActive&&!datasets.vehicle.detail}"> <div class="value"><span>Vehicle km travelled: </span><span>{bars.vehicle[currentMonth]} km <button>{main.detailActive?\'Close\':\'Detail\'}</button></span> </div> <div class="bars"> <div each="{n, i in bars.vehicle}" class="{active:currentMonth==i}" hide="{!isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {genBarStyle(\'vehicle\', i, \'20px\', -1)}"> <span>{barTitle(i)} {i}</span> </div> </div> </div> <div hide="{detailActive&&!datasets.evs.detail}" class="dataset"> <detail-emissions-evs></detail-emissions-evs> </div> <div hide="{detailActive&&!datasets.bus.detail}"> <detail-emissions-bus></detail-emissions-bus> </div> <div hide="{detailActive&&!datasets.cycle.detail}"> <detail-emissions-cycle></detail-emissions-cycle> </div> <h2 hide="{detailActive}" class="datedesc">Stationary Energy</h2> <div hide="{detailActive&&!datasets.electricity.detail}"> <div class="value"><span>Electricity consumed: </span><span>{bars.electricity[currentMonth]} <button>{main.detailActive?\'Close\':\'Detail\'}</button></span> </div> <div class="bars"> <div each="{n, i in bars.electricity}" class="{active:currentMonth==i}" hide="{!isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {genBarStyle(\'electricity\', i, \'20px\')}"> <span>{barTitle(i)}</span> </div> </div> </div> <div hide="{detailActive&&!datasets.stationary.detail}"> <detail-emissions-static></detail-emissions-static> </div> </div> </div> <detail-item-news if="{this.detail.relatedNews}" data-item="{this.detail.relatedNews}"></detail-item-news> </div> <pulse-box each="{detail.nodes}"></pulse-box> </virtual>', 'detail-emissions header,[data-is="detail-emissions"] header{ display: flex; flex-direction: column; } detail-emissions header>*,[data-is="detail-emissions"] header>*{ flex-basis: 100%; } detail-emissions #megapie img,[data-is="detail-emissions"] #megapie img{ transform: none; } detail-emissions .sticky,[data-is="detail-emissions"] .sticky{ position: fixed; top: 35px; width: calc(100% - 40px); background: white; z-index: 100; } detail-emissions .sticky+*,[data-is="detail-emissions"] .sticky+*{ padding-top: 80px; } detail-emissions .detaildesc,[data-is="detail-emissions"] .detaildesc{ margin-top: 20px; font-size: 80%; } detail-emissions .value.small,[data-is="detail-emissions"] .value.small{ font-size: 75%; } detail-emissions .bars div:after,[data-is="detail-emissions"] .bars div:after{ content: attr(data-m); color: black; font-size: 60%; position: absolute; left: 6px; top: 19px; } detail-emissions .nexttopie .bars div:after,[data-is="detail-emissions"] .nexttopie .bars div:after{ left: 1px; font-size: 50%; } detail-emissions .datedesc,[data-is="detail-emissions"] .datedesc{ flex-basis: 100%; margin: 4px 0; } detail-emissions h3.datedesc,[data-is="detail-emissions"] h3.datedesc{ text-align: right; font-variant: small-caps; } detail-emissions .headerdesc,[data-is="detail-emissions"] .headerdesc{ flex-basis: 100%; display: flex; margin: 4px 0; flex-direction: row; justify-content: flex-end; align-items: center; } detail-emissions .headerdesc button,[data-is="detail-emissions"] .headerdesc button{ background: #ccc; color: black; padding: 2px 10px; margin-left: 3px; } detail-emissions .headerdesc .datedesc,[data-is="detail-emissions"] .headerdesc .datedesc{ flex-basis: auto; } detail-emissions datalist option,[data-is="detail-emissions"] datalist option{ padding: 0; } detail-emissions .value button,[data-is="detail-emissions"] .value button{ font-size: 60%; padding: 3px 5px; margin-right: 3px; margin-top: 0px; } detail-emissions .bars div,[data-is="detail-emissions"] .bars div{ margin: 0px 1px; height: 100%; box-sizing: border-box; opacity: 0.5; position: relative; flex-basis: calc(calc(100% / 12) - 2px); flex-shrink: 0; } detail-emissions .bars div span,[data-is="detail-emissions"] .bars div span{ position: absolute; top: 9px; left: calc(50% - 10px); font-size: 60%; color: white; display: none; } detail-emissions .bars div.active span,[data-is="detail-emissions"] .bars div.active span{ } detail-emissions .border10 .bars div span,[data-is="detail-emissions"] .border10 .bars div span{ font-size: 50%; top: 1px; } detail-emissions .bars div.active,[data-is="detail-emissions"] .bars div.active{ opacity: 1; } detail-emissions .value,[data-is="detail-emissions"] .value{ padding: 2px 5xp; display: flex; justify-content: space-between; } detail-emissions detail-item-news,[data-is="detail-emissions"] detail-item-news{ margin-top: 10px; } detail-emissions table.data td,[data-is="detail-emissions"] table.data td,detail-emissions table.data th,[data-is="detail-emissions"] table.data th{ text-align: left } detail-emissions datalist,[data-is="detail-emissions"] datalist{ display: flex; justify-content: space-between; color: black; font-size: 80%; width: 100%; } detail-emissions #yearswrapper,[data-is="detail-emissions"] #yearswrapper{ position: relative; } detail-emissions #yearslider,[data-is="detail-emissions"] #yearslider{ background: rgba(0, 255, 0, 0.3); position: absolute; height: 10px; top: -9px; width: calc(100% / 5); left: 5px; } detail-emissions #pie1,[data-is="detail-emissions"] #pie1{ margin-right: 10px; margin-top: 23px; } detail-emissions .info,[data-is="detail-emissions"] .info{ flex-grow: 1 } detail-emissions .info>div,[data-is="detail-emissions"] .info>div{ background-color: #f8f8f8; border-radius: 4px; margin: 15px 0px; } detail-emissions .bars,[data-is="detail-emissions"] .bars{ width: 100%; height: 10px; display: flex; } detail-emissions .info.border10 .bars,[data-is="detail-emissions"] .info.border10 .bars{ height: 10px; } detail-emissions .info.border30 .bars,[data-is="detail-emissions"] .info.border30 .bars{ height: 30px; } detail-emissions .info.border20 .bars,[data-is="detail-emissions"] .info.border20 .bars{ height: 20px; padding-bottom: 8px; } detail-emissions .dataset,[data-is="detail-emissions"] .dataset{ flex-grow: 1 } detail-emissions .dataset.expanded,[data-is="detail-emissions"] .dataset.expanded{ background: white; } detail-emissions .expanded .expanddetail,[data-is="detail-emissions"] .expanded .expanddetail{ display: block; }', 'class="pulse-page"', function (opts) {
+  var _this = this;
+
+  var self = this.main = this;
+  var width;
+  this.stickyHeader = false;
+  this.totalScreen = true;
+  this.currentYear = 2021;
+  this.maxMonth = moment().diff(moment([2017, 1]), "month") + 1;
+  this.currentMonth = this.maxMonth;
+  this.yearTypeValue = 0;
+  this.colors = {
+    good: "rgb(84 255 214)",
+    tracking: "rgb(250 250 107)",
+    bad: "rgb(255 118 118)"
+  };
+
+  this.getRand = function () {
+    var a = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 50000;
+    return Math.round(Math.random() * a) + a;
+  };
+
+  this.smallRand = function () {
+    return Math.round(Math.random() * 100) / 100;
+  };
+
+  var getYearTypeValue = function getYearTypeValue() {
+    if (_this.yearTypeValue == "r") {
+      return _this.currentMonth - 11;
+    } else {
+      var v = parseInt(_this.yearTypeValue);
+      var x = Math.floor((_this.currentMonth + v) / 12) * 12 + (0 - v);
+      return x;
+    }
+  };
+
+  this.yearLeftNumber = function () {
+    var ym = getYearTypeValue();
+    var x = Math.max(0, ym / _this.maxMonth);
+    return x;
+  };
+
+  this.yearWidth = function () {
+    var years = Math.ceil(_this.maxMonth / 12);
+
+    var x = _this.yearLeftNumber();
+
+    return "min(calc(calc(100% / ".concat(years, ") + 10px), calc(calc(100% - 0px) - calc(calc(100% - 20px) * ").concat(x, " + 9px)))");
+  };
+
+  this.yearLeft = function () {
+    var x = _this.yearLeftNumber();
+
+    return "calc(calc(100% - 20px) * ".concat(x, " + 9px)");
+  };
+
+  this.sliderStyle = function () {
+    return {
+      width: _this.yearWidth(),
+      left: _this.yearLeft()
+    };
+  };
+
+  this.yearType = function (e) {
+    this.yearTypeValue = e.target.value;
+  }.bind(this);
+
+  this.months = Array.from(Array(this.maxMonth + 1), function (b, i) {
+    return i;
+  });
+  var gradient = ["#ff0000", "#00ff00"].reverse();
+  var howManyGen = this.maxMonth + 1;
+  this.detailActive = false;
+  this.datasets = {
+    fuel: {
+      visible: true,
+      detail: false
+    },
+    vehicle: {
+      visible: true,
+      detail: false
+    },
+    evs: {
+      visible: true,
+      detail: false
+    },
+    bus: {
+      visible: true,
+      detail: false
+    },
+    cycle: {
+      visible: true,
+      detail: false
+    },
+    electricity: {
+      visible: true,
+      detail: false
+    },
+    stationary: {
+      visible: true,
+      detail: false
+    }
+  };
+  this.bars = {
+    "petrol": [],
+    "diesel": [],
+    "total": [],
+    "vehicle": Array.from(Array(howManyGen), function (b, i) {
+      return _this.getRand();
+    }),
+    "evs": [],
+    "bus": [],
+    "cycle": [],
+    "electricity": Array.from(Array(howManyGen), function (b, i) {
+      return _this.getRand(5000) + 10000;
+    }),
+    "stationary": []
+  };
+  this.years = {
+    "electricity": Object.entries(this.bars.electricity.reduce(function (r, a, i) {
+      var _r$year;
+
+      var year = 2017 + Math.floor(i / 12);
+      r[year] = ((_r$year = r[year]) !== null && _r$year !== void 0 ? _r$year : 0) + a;
+      return r;
+    }, {})).reduce(function (r, a) {
+      r.push({
+        year: a[0],
+        electricity: a[1]
+      });
+      return r;
+    }, [])
+  };
+
+  this.genBarStyle = function (arr, i, height) {
+    var order = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1;
+
+    var max = _this.bars[arr].reduce(function (a, b) {
+      return Math.max(a, b);
+    });
+
+    var min = _this.bars[arr].reduce(function (a, b) {
+      return Math.min(a, b);
+    });
+
+    var val = _this.bars[arr][i];
+    var ratio = val / max;
+    var color = "blue";
+    var cr = 0;
+
+    if (i == 0) {
+      return "calc(".concat(height, " * ").concat(ratio, ") solid green");
+    } else {
+      var prev = _this.bars[arr][i - 1];
+      if (prev == val) color = "blue";
+      if (prev * order > val * order) color = "red";
+      if (prev * order < val * order) color = "green";
+      if (arr == "evs" && i == 50) console.log(prev, val, cr, min, max, _this.bars[arr]);
+      return "calc(".concat(height, " * ").concat(ratio, ") solid ").concat(color);
+    }
+  };
+
+  this.isVisible = function (i) {
+    var ym = getYearTypeValue();
+    i = i + 1;
+    return ym < i && ym + 12 >= i;
+  };
+
+  this.barTitle = function (i) {
+    var m = (i - 1) % 12 + 1;
+    var y = Math.floor((i - 1) / 12) + 17;
+    return "".concat(m, "/").concat(y);
+  };
+
+  this.dateDesc = function () {
+    var m = (this.currentMonth - 0) % 12;
+    var y = Math.floor((this.currentMonth - 0) / 12) + 2017;
+    return moment.months("l", m) + " " + y;
+  };
+
+  this.rollingMonths = function () {
+    var totals = [];
+    this.bars.total.forEach(function (a) {
+      return totals.push({
+        a: a
+      });
+    });
+    this.bars.electricity.forEach(function (a, i) {
+      if (totals[i]) {
+        totals[i].b = a;
+      } else {
+        totals[i] = {
+          b: a
+        };
+      }
+    });
+    this.bars.stationary.forEach(function (a, i) {
+      if (totals[i]) {
+        totals[i].c = a;
+      } else {
+        totals[i] = {
+          c: a
+        };
+      }
+    });
+    totals = totals.map(function (a) {
+      var _a$a, _a$b, _a$c;
+
+      return parseInt((_a$a = a.a) !== null && _a$a !== void 0 ? _a$a : 0) + parseInt((_a$b = a.b) !== null && _a$b !== void 0 ? _a$b : 0) + parseInt((_a$c = a.c) !== null && _a$c !== void 0 ? _a$c : 0);
+    });
+    var sums = [];
+
+    for (var i = 0; i < totals.length; i++) {
+      if (i < 12) {
+        sums.push(totals.filter(function (a, j) {
+          return j < 12 && j >= 0;
+        }).reduce(function (r, a) {
+          return r + a;
+        }, 0));
+      } else {
+        sums.push(totals.filter(function (a, j) {
+          return j < i && j >= i - 12;
+        }).reduce(function (r, a) {
+          return r + a;
+        }, 0));
+      }
+    }
+
+    return sums;
+  };
+
+  this.getDistributionPie = function () {
+    var main = self;
+
+    if (!width) {
+      width = parseInt(getComputedStyle(this.root).width) - 20;
+    }
+
+    var total = 1425197 + 483079 + 410970 + 228571 + 117825;
+    var graphData = {
+      ret: [{
+        name: "Sectors",
+        type: "pie",
+        values: [1425197, 483079, 410970, 228571, 117825],
+        labels: ["Transport", "Buildings", "Agriculture", "Waste", "Industrial"],
+        textinfo: "percent",
+        showlegend: true,
+        legendgroup: "outside",
+        marker: {
+          colors: ['#00b384', '#a3ce62', "#cbdb44", "#348073", "#12a4a4"]
+        },
+        sort: false,
+        pull: [0, 0, 0, 0, 0, 0],
+        hole: 0.7
+      }, {
+        name: "Trackable",
+        type: 'pie',
+        labels: ['Trackable (petrol, diesel, electricity)', 'Hard to track'],
+        values: [1052815 + 330778, total - (1052815 + 330778)],
+        rotation: -1 * (360 * 330778 / total),
+        hole: 0.5,
+        textposition: "inside",
+        legendgroup: "inside",
+        domain: {
+          x: [0.15, 0.85],
+          y: [0.15, 0.85]
+        }
+      }],
+      height: width + 50,
+      autosize: false,
+      width: width,
+      margin: {
+        t: 0,
+        b: 50,
+        l: 0,
+        r: 0
+      },
+      legend: {
+        "orientation": "h",
+        font: {
+          size: 8
+        },
+        traceorder: "grouped"
+      },
+      showlegend: false,
+      paper_bgcolor: "transparent"
+    };
+    return graphData;
+  };
+
+  this.getGauge = function () {
+    var main = self;
+
+    if (!width) {
+      width = parseInt(getComputedStyle(this.root).width) - 20;
+    }
+
+    var x = this.rollingMonths();
+    var value = x[x.length - 1];
+    var start = x[0];
+    var graphData = {
+      ret: {
+        type: "indicator",
+        mode: "gauge+number+delta",
+        value: value,
+        title: {
+          text: "Trackable emissions <br>Last 12 months (t CO<sub>2</sub>e)",
+          font: {
+            size: 14
+          }
+        },
+        delta: {
+          reference: start * 0.4,
+          increasing: {
+            color: this.colors.bad
+          },
+          decreasing: {
+            color: this.colors.good
+          }
+        },
+        gauge: {
+          axis: {
+            range: [null, start * 1.2],
+            tickvals: [start * 0.4, start * 0.55, start * (1.2 + 0.2) / 2],
+            ticktext: ["2030 goal", "on track", "we are behind"],
+            tickcolor: "transparent",
+            tickangle: 0
+          },
+          bar: {
+            color: "rgb(31, 119, 180)",
+            thickness: 0.6
+          },
+          bgcolor: "white",
+          steps: [{
+            range: [0, start * 0.4],
+            color: this.colors.good
+          }, {
+            range: [start * 0.4, start * 0.6],
+            color: this.colors.tracking
+          }, {
+            range: [start * 0.6, start * 1.2],
+            color: this.colors.bad
+          }]
+        }
+      },
+      xaxis: {
+        autorange: false
+      },
+      yaxis: {
+        autorange: false
+      },
+      margin: {
+        t: 40,
+        b: 0,
+        l: 0,
+        r: 0
+      },
+      legend: {
+        "orientation": "h"
+      },
+      width: width,
+      height: 250
+    };
+    return graphData;
+  };
+
+  this.getMegaGraph = function () {
+    var main = self;
+    var opacity = 0.8;
+    var line = {
+      color: '#106f7aaa',
+      width: 1
+    };
+
+    if (!width) {
+      width = parseInt(getComputedStyle(this.root).width) - 20;
+    }
+
+    var graphData = {
+      ret: [{
+        y: main.years.fuel.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.petrol);
+          return r;
+        }, []),
+        x: main.years.fuel.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        type: 'bar',
+        name: "Petrol",
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: '#005f6a',
+          opacity: opacity,
+          line: line
+        }
+      }, {
+        y: main.years.fuel.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.diesel);
+          return r;
+        }, []),
+        x: main.years.fuel.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        type: 'bar',
+        name: "Diesel",
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: '#d0be24',
+          opacity: opacity,
+          line: line
+        }
+      }, {
+        y: main.years.stationary.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.diesel + a.petrol);
+          return r;
+        }, []),
+        x: main.years.stationary.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        type: 'bar',
+        name: "Stationary",
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: '#a3ce62',
+          opacity: opacity,
+          line: line
+        }
+      }, {
+        y: main.years.electricity.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.electricity);
+          return r;
+        }, []),
+        x: main.years.electricity.filter(function (a) {
+          return a.year >= 2017;
+        }).reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        type: 'bar',
+        name: "Electricity",
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: '#B7DEE8',
+          opacity: opacity,
+          line: line
+        }
+      }, {
+        type: "line",
+        name: "Rolling 12 months",
+        y: this.rollingMonths(),
+        x: this.rollingMonths().reduce(function (r, a, i) {
+          r.push(2017 + i / 12);
+          return r;
+        }, []),
+        line: {
+          color: "rgba(93, 128, 255, 0.93)",
+          width: 3
+        }
+      }],
+      yaxis: {
+        range: [0, 1700000]
+      },
+      margin: {
+        t: 20,
+        b: 80,
+        l: 30,
+        r: 10
+      },
+      legend: {
+        "orientation": "h"
+      },
+      width: width,
+      height: 300,
+      barmode: "stack",
+      shapes: [{
+        type: 'rect',
+        layer: 'below',
+        xref: 'paper',
+        yref: 'y',
+        x0: 0,
+        y0: 0,
+        x1: 1,
+        y1: 1000000,
+        opacity: 0.4,
+        fillcolor: this.colors.good,
+        line: {
+          color: 'rgb(255, 0, 0)',
+          width: 0,
+          dash: 'dot'
+        }
+      }, {
+        type: 'rect',
+        layer: 'below',
+        xref: 'paper',
+        yref: 'y',
+        x0: 0,
+        y0: 0,
+        x1: 1,
+        y1: 1200000,
+        opacity: 0.4,
+        fillcolor: this.colors.tracking,
+        line: {
+          color: 'rgb(255, 0, 0)',
+          width: 0,
+          dash: 'dot'
+        }
+      }]
+    };
+    return graphData;
+  };
+
+  this.monthLess = function (e) {
+    this.currentMonth--;
+  }.bind(this);
+
+  this.monthMore = function (e) {
+    this.currentMonth++;
+  }.bind(this);
+
+  this.datasetExpand = function (e, dataset) {
+    var _this2 = this;
+
+    if (this.datasets[dataset].detail) {
+      this.detailActive = false;
+      this.datasets[dataset].detail = false;
+    } else {
+      this.detailActive = true;
+      Object.keys(this.datasets).forEach(function (a) {
+        _this2.datasets[a].detail = false;
+      });
+      this.datasets[dataset].detail = true;
+    }
+
+    this.update();
+  }.bind(this);
+
+  this.setYear = function (e) {
+    this.currentYear = e.target.value;
+  }.bind(this);
+
+  this.setMonth = function (e) {
+    this.currentMonth = parseInt(e.target.value);
+    console.log(this);
+  }.bind(this);
+
+  var doStickyHeader = function doStickyHeader(x) {
+    var oldsticky = self.stickyHeader;
+
+    if (x >= 163) {
+      self.stickyHeader = true;
+    } else {
+      self.stickyHeader = false;
+    }
+
+    if (oldsticky != self.stickyHeader) {
+      self.update();
+    }
+  };
+
+  this.on("mount", function () {
+    app.on("mainscroll", doStickyHeader);
+
+    _this.update();
+  });
+  this.on("unmount", function () {
+    app.off("mainscroll", doStickyHeader);
+  });
+  this.on("update", function () {
+    this.fuel = {
+      years: [],
+      diesel: [],
+      petrol: []
+    };
+    this.detail = this.parent ? this.parent.detail : this.opts.dataDetail;
+    if (this.detail && this.detail[0] && this.detail[0].icon2) this.detail[0].image = "/assets/svg/" + this.detail[0].icon2 + "-black.svg";
+
+    if (this.detail.evs && this.bars.evs.length == 0) {
+      this.bars.evs = this.detail.evs.reverse().map(function (a) {
+        return a.c;
+      });
+      this.years.evs = this.detail.evs.reverse().reduce(function (r, a) {
+        r[a.year] = (r.hasOwnProperty(a.year) ? r[a.year] : 0) + a.c;
+        return r;
+      }, {});
+    }
+
+    if (this.detail.bus && this.bars.bus.length == 0) {
+      this.bars.bus = this.detail.bus.reverse().map(function (a) {
+        return a.c;
+      });
+      this.years.bus = this.detail.bus.reverse().reduce(function (r, a) {
+        r[a.year] = (r.hasOwnProperty(a.year) ? r[a.year] : 0) + a.c;
+        return r;
+      }, {});
+    }
+
+    if (this.detail.cycle && this.bars.cycle.length == 0) {
+      this.bars.cycle = this.detail.cycle.reverse().map(function (a) {
+        return a.c;
+      });
+      this.years.cycle = this.detail.cycle.reverse().reduce(function (r, a) {
+        r[a.year] = (r.hasOwnProperty(a.year) ? r[a.year] : 0) + parseInt(a.c);
+        return r;
+      }, {});
+    }
+
+    if (this.detail.fuelemissions && this.bars.petrol.length == 0) {
+      this.bars.petrol = this.detail.fuelemissions.reverse().map(function (a) {
+        return Math.round(a.petrolemission / 1000);
+      });
+      this.bars.diesel = this.detail.fuelemissions.reverse().map(function (a) {
+        return Math.round(a.dieselemission / 1000);
+      });
+      this.bars.total = this.detail.fuelemissions.reverse().map(function (a) {
+        return Math.round((a.dieselemission + a.petrolemission) / 1000);
+      });
+      this.years.fuel = this.detail.fuelyears.map(function (a) {
+        return {
+          year: a.year,
+          petrol: Math.round(a.petrol / 1000),
+          diesel: Math.round(a.diesel / 1000)
+        };
+      });
+    }
+
+    if (this.detail.fuelstatic && this.bars.stationary.length == 0) {
+      this.bars.stationary = this.detail.fuelstatic.reverse().map(function (a) {
+        return Math.round((a.dieselstatic + a.petrolstatic) / 1000);
+      });
+      this.years.stationary = this.detail.fuelstaticyears.reverse().map(function (a) {
+        return {
+          year: a.year,
+          petrol: Math.round(a.petrol / 1000),
+          diesel: Math.round(a.diesel / 1000)
+        };
+      });
+    }
+
+    console.log(this);
+
+    if (this.detail.fuelemissions) {
+      if (!this.graph) {
+        this.one('updated', function () {
+          var data = [{
+            type: "pie",
+            values: [this.bars.petrol[this.bars.petrol.length - 1], this.bars.diesel[this.bars.diesel.length - 1]],
+            labels: ["Petrol", "Diesel"],
+            textinfo: "label+percent",
+            insidetextorientation: "radial",
+            showlegend: false,
+            marker: {
+              colors: ['#005f6a', '#d0be24']
+            }
+          }];
+          var layout = {
+            height: 100,
+            autosize: false,
+            width: 100,
+            margin: {
+              t: 10,
+              b: 0,
+              l: 10,
+              r: 0
+            },
+            showlegend: false,
+            paper_bgcolor: "transparent"
+          };
+          this.graph = Plotly.newPlot('pie1', data, layout, {
+            displayModeBar: false
+          });
+          var data = [{
+            type: "pie",
+            values: [this.detail.evcustomer.filter(function (a) {
+              return a.customer == "Individual";
+            }).reduce(function (r, a) {
+              return a.c;
+            }, 0), this.detail.evcustomer.filter(function (a) {
+              return a.customer == "Company";
+            }).reduce(function (r, a) {
+              return a.c;
+            }, 0)],
+            labels: ["Individual", "Company"],
+            textinfo: "label+percent",
+            insidetextorientation: "radial",
+            showlegend: false
+          }];
+          var layout = {
+            height: 120,
+            autosize: false,
+            width: 150,
+            margin: {
+              t: 20,
+              b: 0,
+              l: 50,
+              r: 0
+            },
+            showlegend: false,
+            paper_bgcolor: "transparent"
+          };
+          this.graph = Plotly.newPlot('pie2', data, layout, {
+            displayModeBar: false
+          });
+        });
+      } else {
+        if (this.bars.petrol[this.currentMonth]) {
+          Plotly.restyle('pie1', 'values', [[this.bars.petrol[this.currentMonth], this.bars.diesel[this.currentMonth]]]);
+        }
+      }
+    }
+  });
+
+  this.showDescGo = function (e) {
+    var _this3 = this;
+
+    if (!this.showDesc) {
+      this.showDesc = true;
+      setTimeout(function () {
+        return window.addEventListener("click", _this3.hideDescGo);
+      });
+    }
+  }.bind(this);
+
+  this.hideDescGo = function (e) {
+    if (this.showDesc) {
+      this.showDesc = false;
+      window.removeEventListener("click", this.hideDescGo);
+      this.update();
+    }
+  }.bind(this);
+
+  this.showDetail = function (e) {
+    app.trigger("detail/click/" + this.parent.module, e.item);
+  }.bind(this);
+});
+riot.tag2('detail-emissions-bus', '<div class="value"><span>Bus passengers: </span><span>{main.bars.bus[main.currentMonth]||\'N/A\'} <button click="{datasetExpand}">{main.detailActive?\'Close\':\'Detail\'}</button></span> </div> <div class="bars"> <div each="{n, i in main.bars.bus}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'bus\', i, \'20px\')}"> <span>{main.barTitle(i)}</span> </div> </div> <div class="expanddetail" hide="{!main.datasets.bus.detail}"> <div class="detaildesc"> <p>Transport fuel emission dataset uses fuel tax data to estimate fuel usage and production of CO2-e for both diesel and petrol. For more details see <a href="https://ccc.govt.nz/environment/climate-change/our-footprint" target="_blank">Christchurch district’s GHG emissions</a> </div> <h4>Yearly comparison</h4> <graph graph-data="{getBusYearGraph()}"></graph> </div>', '', '', function (opts) {
+  var main = this.main = this.parent;
+  var width = false;
+
+  this.datasetExpand = function (e) {
+    main.datasetExpand(e, "bus");
+  }.bind(this);
+
+  this.getBusYearGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: {
+        x: Object.keys(main.years.bus),
+        y: Object.keys(main.years.bus).map(function (a) {
+          return main.years.bus[a];
+        }),
+        type: 'bar',
+        text: Object.keys(main.years.bus).map(function (a) {
+          return main.years.bus[a];
+        }).map(String),
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+});
+riot.tag2('detail-emissions-cycle', '<div class="value"><span>Cycle trips: </span><span>{main.bars.cycle[main.currentMonth]||\'N/A\'} <button click="{datasetExpand}">{main.detailActive?\'Close\':\'Detail\'}</button></span> </div> <div class="bars"> <div each="{n, i in main.bars.cycle}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'cycle\', i, \'20px\')}"> <span>{main.barTitle(i)}</span> </div> </div> <div class="expanddetail" hide="{!main.datasets.cycle.detail}"> <div class="detaildesc"> <p>Transport fuel emission dataset uses fuel tax data to estimate fuel usage and production of CO2-e for both diesel and petrol. For more details see <a href="https://ccc.govt.nz/environment/climate-change/our-footprint" target="_blank">Christchurch district’s GHG emissions</a> </div> <h4>Yearly comparison</h4> <graph graph-data="{getCycleYearGraph()}"></graph> <h4>Time of day</h4> <graph graph-data="{getCycleHourGraph()}"></graph> <h4>Day of week</h4> <graph graph-data="{getCycleDayGraph()}"></graph> <h4>Month of year</h4> <graph graph-data="{getCycleMonthGraph()}"></graph> </div>', '', '', function (opts) {
+  var main = this.main = this.parent;
+  var width = false;
+
+  this.datasetExpand = function (e) {
+    main.datasetExpand(e, "cycle");
+  }.bind(this);
+
+  this.getCycleHourGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: {
+        x: main.detail.cyclehour.map(function (a) {
+          return a.h;
+        }),
+        y: main.detail.cyclehour.map(function (a) {
+          return a.c;
+        }),
+        type: 'bar',
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+
+  this.getCycleDayGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: {
+        x: main.detail.cycleday.map(function (a) {
+          return a.d;
+        }),
+        y: main.detail.cycleday.map(function (a) {
+          return a.c;
+        }),
+        type: 'bar',
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+
+  this.getCycleMonthGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    var months = main.detail.cycle.filter(function (a) {
+      return a.year == 2020;
+    }).map(function (a) {
+      return a.month;
+    });
+    var mocount = months.reduce(function (r, a) {
+      r[a] = 0;
+      return r;
+    }, []);
+    console.log(mocount);
+    return {
+      ret: {
+        x: months,
+        y: main.detail.cycle.filter(function (a) {
+          return a.year < moment().year();
+        }).reduce(function (r, a) {
+          r[a.month] += parseInt(a.c);
+          return r;
+        }, mocount).filter(function (a) {
+          return a;
+        }),
+        type: 'bar',
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+
+  this.getCycleYearGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: {
+        x: Object.keys(main.years.cycle),
+        y: Object.keys(main.years.cycle).map(function (a) {
+          return main.years.cycle[a];
+        }),
+        type: 'bar',
+        text: Object.keys(main.years.cycle).map(function (a) {
+          return main.years.cycle[a];
+        }).map(String),
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+});
+riot.tag2('detail-emissions-static', '<div> <div class="value"><span>Petrol & Diesel stationary use CO<sub>2</sub>-e: </span><span>{main.bars.stationary[main.currentMonth]||\'N/A\'} t <button click="{datasetExpand}">{main.detailActive?\'Close\':\'Detail\'}</button></span></div> <div class="bars"> <div each="{n, i in main.bars.stationary}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'stationary\', i, \'20px\', -1)}"> <span>{main.barTitle(i)}</span> </div> </div> </div> <div class="expanddetail" hide="{!main.datasets.stationary.detail}"> <div class="detaildesc"> <p>Transport fuel emission dataset uses fuel tax data to estimate fuel usage and production of CO2-e for both diesel and petrol. For more details see <a href="https://ccc.govt.nz/environment/climate-change/our-footprint" target="_blank">Christchurch district’s GHG emissions</a> </div> <h4>Yearly comparison</h4> <graph graph-data="{getFuelStaticYearGraph()}"></graph> </div>', '', '', function (opts) {
+  var main = this.main = this.parent;
+  var width = false;
+
+  this.datasetExpand = function (e) {
+    main.datasetExpand(e, "stationary");
+  }.bind(this);
+
+  this.getFuelStaticYearGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: {
+        x: main.years.stationary.reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        y: main.years.stationary.reduce(function (r, a) {
+          r.push(a.petrol + a.diesel);
+          return r;
+        }, []),
+        type: 'bar',
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      margin: {
+        t: 20,
+        b: 40,
+        l: 40,
+        r: 10
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+});
+riot.tag2('detail-emissions-fuel', '<div id="pie1" style="width:100px;height:100px;"></div> <div class="info border20 nexttopie"> <div> <div class="value"><span>Total Fuel CO<sub>2</sub>-e: </span><span>{main.bars.total[main.currentMonth]||\'N/A\'} t <button click="{datasetExpand}">{main.detailActive?\'Close\':\'Detail\'}</button></span></div> <div class="bars"> <div each="{n, i in main.bars.total}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'total\', i, \'20px\', -1)}"> <span>{main.barTitle(i)}</span> </div> </div> </div> <div> <div class="value"> <span>Petrol CO<sub>2</sub>-e: </span> <span>{main.bars.petrol[main.currentMonth]||\'N/A\'} t </span> </div> <div class="value small"> <span>On Road CO<sub>2</sub>-e: </span> <span>{Math.round(main.bars.petrol[main.currentMonth]*0.98)||\'N/A\'} t</span> </div> <div class="value small"> <span>Off Road CO<sub>2</sub>-e: </span> <span>{Math.round(main.bars.petrol[main.currentMonth]*0.01)||\'N/A\'} t</span> </div> <div class="bars"> <div each="{n, i in main.bars.petrol}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'petrol\', i, \'20px\', -1)}"> <span>{main.barTitle(i)}</span> </div> </div> </div> <div> <div class="value"><span>Diesel CO<sub>2</sub>-e: </span><span>{main.bars.diesel[main.currentMonth]||\'N/A\'} t </span></div> <div class="value small"> <span>On Road CO<sub>2</sub>-e: </span> <span>{Math.round(main.bars.petrol[main.currentMonth]*0.76)||\'N/A\'} t</span> </div> <div class="value small"> <span>Off Road CO<sub>2</sub>-e: </span> <span>{Math.round(main.bars.petrol[main.currentMonth]*0.15)||\'N/A\'} t</span> </div> <div class="bars"> <div each="{n, i in main.bars.diesel}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'diesel\', i, \'20px\', -1)}"> <span>{main.barTitle(i)}</span> </div> </div> </div> <div class="expanddetail" hide="{!main.datasets.fuel.detail}"> <div class="detaildesc"> <p>Transport fuel emission dataset uses fuel tax data to estimate fuel usage and production of CO2-e for both diesel and petrol. For more details see <a href="https://ccc.govt.nz/environment/climate-change/our-footprint" target="_blank">Christchurch district’s GHG emissions</a> </div> <h4>Yearly comparison</h4> <graph graph-data="{getFuelYearGraph()}"></graph> </div> </div>', '', '', function (opts) {
+  var main = this.main = this.parent;
+  var width = false;
+
+  this.datasetExpand = function (e) {
+    main.datasetExpand(e, "fuel");
+  }.bind(this);
+
+  this.getFuelYearGraph = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: [{
+        y: main.years.fuel.reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        x: main.years.fuel.reduce(function (r, a) {
+          r.push(a.petrol);
+          return r;
+        }, []),
+        type: 'bar',
+        name: "Petrol",
+        textposition: 'auto',
+        hoverinfo: 'none',
+        orientation: 'h',
+        marker: {
+          color: '#005f6a',
+          opacity: 0.6,
+          line: {
+            color: '#106f7a',
+            width: 1
+          }
+        },
+        width: 1
+      }, {
+        y: main.years.fuel.reduce(function (r, a) {
+          r.push(a.year);
+          return r;
+        }, []),
+        x: main.years.fuel.reduce(function (r, a) {
+          r.push(a.diesel);
+          return r;
+        }, []),
+        type: 'bar',
+        name: "Diesel",
+        textposition: 'auto',
+        hoverinfo: 'none',
+        orientation: 'h',
+        width: 1,
+        marker: {
+          color: '#d0be24',
+          opacity: 0.6,
+          line: {
+            color: '#c0ae14',
+            width: 1
+          }
+        }
+      }],
+      yaxis: {
+        type: 'category'
+      },
+      margin: {
+        t: 0,
+        b: 10,
+        l: 40,
+        r: 10
+      },
+      legend: {
+        "orientation": "h"
+      },
+      width: width,
+      height: 600,
+      barmode: "stack"
+    };
+  };
+});
+riot.tag2('detail-emissions-evs', '<div class="value"><span>Battery electric vehicles: </span><span>{main.bars.evs[main.currentMonth]} <button click="{datasetExpand}">{main.detailActive?\'Close\':\'Detail\'}</button></span></div> <div class="bars"> <div each="{n, i in main.bars.evs}" class="{active:main.currentMonth==i}" hide="{!main.isVisible(i)}" data-m="{moment.months(\'l\', (i-0)%12).substring(0, 3)}" riot-style="border-bottom: {main.genBarStyle(\'evs\', i, \'20px\')}"> <span>{main.barTitle(i)} {i}</span> </div> </div> <div class="expanddetail" hide="{!main.datasets.evs.detail}"> <div class="detaildesc"> <p>Number of battery electric vehicles (excluding hybrids) that had their Warranty of Fitness done in Christchurch. For more details see <a href="https://www.transport.govt.nz/statistics-and-insights/fleet-statistics/sheet/monthly-ev-statistics" target="_blank">transport.govt.nz - fleet statistics</a> </div> <h4>Yearly comparison</h4> <graph graph-data="{getEVGraphData()}"></graph> <h4>Vehicle ownership</h4> <div id="pie2" style="width:100px;height:100px;"></div> <h4>Vehicle age</h4> <graph graph-data="{getEVAgeData()}"></graph> </div>', '', '', function (opts) {
+  var main = this.main = this.parent;
+  var width = false;
+
+  this.datasetExpand = function (e) {
+    main.datasetExpand(e, "evs");
+  }.bind(this);
+
+  this.getEVGraphData = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    return {
+      ret: {
+        x: Object.keys(main.years.evs),
+        y: Object.keys(main.years.evs).map(function (a) {
+          return main.years.evs[a];
+        }),
+        type: 'bar',
+        text: Object.keys(main.years.evs).map(function (a) {
+          return main.years.evs[a];
+        }).map(String),
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+
+  this.getEVAgeData = function (item) {
+    if (!width) {
+      width = parseInt(getComputedStyle(this.parent.root).width) - 20;
+    }
+
+    var _year = new Date().getFullYear();
+
+    return {
+      ret: {
+        x: main.detail.evsage.map(function (a) {
+          return _year - a.caryear;
+        }),
+        y: main.detail.evsage.map(function (a) {
+          return a.c;
+        }),
+        type: 'bar',
+        text: main.detail.evsage.map(function (a) {
+          return a.c;
+        }).map(String),
+        textposition: 'auto',
+        hoverinfo: 'none',
+        marker: {
+          color: 'rgb(158,202,225)',
+          opacity: 0.6,
+          line: {
+            color: 'rgb(8,48,107)',
+            width: 1.5
+          }
+        }
+      },
+      xaxis: {
+        type: 'category'
+      },
+      yaxis: {
+        autorange: true
+      },
+      width: width
+    };
+  };
+});
+"use strict";
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "stravacounts";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var popup = {
+      detail: true,
+      data: {
+        title: "Strava count",
+        sub: f.getProperty("count")
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  $mn.one("map/idle", function () {
+    $mn.isMap().addListener('zoom_changed', function () {
+      var map = $mn.isMap();
+      var zoom = $mn.zoom(); //var zoomFilter = [20, 19, 18, ];
+
+      setTimeout(function () {
+        map.data.forEach(function (f) {
+          if (f.getProperty("feature") == _feature) {
+            var exp10 = Math.floor(Math.log10(f.getProperty("count")));
+            map.data.overrideStyle(f, {
+              visible: zoom + exp10 > 15 || exp10 >= 3
+            });
+          }
+        });
+      }, 100);
+    });
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var p = feat.getProperty("count");
+      var zoom = $mn.zoom();
+      /*    var colors = [{ //white
+             red: 0,
+             green: 0,
+             blue: 0
+         }, { //yellow
+             red: 255,
+             green: 255,
+             blue: 0
+         }, { //orange
+             red: 255,
+             green: 128,
+             blue: 0
+         }, { //purple
+             red: 255,
+             green: 0,
+             blue: 128
+         }, { //red
+             red: 0,
+             green: 0,
+             blue: 255
+         }];
+           var exp10 = Math.floor(Math.log10(p));
+         var color1 = colors[exp10];
+         var color2 = colors[exp10 + 1];
+         var frac = p / Math.pow(10, exp10 + 1);
+             var linecolor = _lib.colorGradient(frac, color1, color2); */
+
+      var frac = p; //  frac += 100
+
+      frac /= 100;
+
+      var linecolor = _lib.colorGradient(frac, {
+        red: 0,
+        green: 255,
+        blue: 0
+      }, {
+        red: 255,
+        green: 0,
+        blue: 0
+      });
+
+      linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'; // linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'
+
+      var linestyle = {
+        strokeColor: linecolor,
+        strokeWeight: 3,
+        strokeOpacity: 0.8,
+        visible: zoom + exp10 > 15 || exp10 >= 3,
+        zIndex: 5
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "ourstories";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var details = [];
+    details.push({
+      label: "Story",
+      audio: f.getProperty("story_url")
+    });
+    details.push({
+      label: "Description",
+      value: f.getProperty("desc")
+    });
+    details.push({
+      svgIcon: "Location",
+      label: "Address",
+      value: f.getProperty("address")
+    });
+    details.push({
+      label: "Our Stories project",
+      link: "https://www.ourstoriesproject.org/",
+      value: "www.ourstoriesproject.org"
+    });
+    var popup = {
+      detail: true,
+      openDetails: true,
+      data: {
+        title: f.getProperty("name"),
+        details: details,
+        image: f.getProperty("image")
+      } // marker: feat
+
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      riot.util.misc.extend(_style, {
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        },
+        strokeColor: "#3b69b2"
+      });
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+
+riot.tag2('detail-parks', '<div class="wrapper" if="{detail}"> <pulse-box each="{detail.nodes}"></pulse-box> <div class="detailsection"> <div class="detail-flex detail-section detail-header-table margin-top {bottom-corners:!superPark.showDesc}"> <div> <div>{superPark.number} parks</div> <span></span> </div> <div class="buttons"> <button click="{showMap}">Map</button> <button class="{active:superPark.showDesc}" click="{showSuperParkDesc}">About</button> </div> </div> <div hide="{!superPark.showDesc}" class="detail-section detail-data detail-flex flex-left"> <div class="detail-name-val "> <strong>Total area</strong> <span>{Math.round(10*superPark.area/(1000*1000))/10}km<sup>2</sup></span> </div> <div class="detail-name-val "> <strong>Total Perimeter</strong> <span>{Math.round(superPark.perimeter/1000)}km</span> </div> </div> </div> <div class="detailsection"> <div class="detail-flex detail-section detail-header-table margin-top {bottom-corners:!assetDetails}"> <div> <div>{detail.assets.length} park assets</div> <span></span> </div> <div class="buttons"> <button class="{active:assetDetails}" click="{showAssetDesc}">About</button> </div> </div> <div hide="{!assetDetails}" class="detail-section detail-data detail-flex flex-left"> <table class="assetlist"> <tr> <th>Type</th> <th>Count</th> <th></th> </tr> <tbody each="{type in detail.orderedTypes}"> <tr> <td>{type.name}</td> <td>{type.assetcount}</td> <td><button class="{active:type.showList}" click="{viewTypeList}">List</button></td> <td><button click="{viewTypeMap}">Map</button></td> </tr> <tr if="{type.showList}"> <td colspan="4"> <table> <tbody each="{asset in filterAssets(type)}"> <tr> <td colspan="3"> <content-box params="{toParams(asset)}"></content-box> </td> </tr> </tbody> </table> </td> </tr> </tbody> </table> </div> </div> <div class="detail-section controls noTopMargin"> <form class="filter"> <fieldset> <legend>Filter by park features</legend> <div class="flex"> <label>Include: <select change="{setFilterIn}"> <option value="-1">all</option> <option each="{type in detail.orderedTypes}" riot-value="{type.id}">{type.name}</option> </select> </label> <label>Exclude: <select change="{setFilterEx}"> <option value="-1">none</option> <option each="{type in detail.orderedTypes}" riot-value="{type.id}">{type.name}</option> </select> </label> </div> </fieldset> </form> </div> <div ref="list" class="detailsection" if="{detail.list}"> <div each="{item in detail.list}" hide="{item.hide||item.hideMain||item.isHidden}" class="{item.class}"> <div class="detail-flex detail-section detail-header-table margin-top {bottom-corners:!item.showDesc}"> <div> <div>{item.parkname}</div> <span>{item.parktype} - {item.distance}m</span> </div> <div class="buttons"> <button class="{active:item.showDesc}" click="{showItemDesc}">About</button> </div> </div> <div hide="{!item.showDesc}" class="detail-section detail-data detail-flex flex-left"> <div class="detail-name-val "> <strong>Area</strong> <span>{item.area}m<sup>2</sup></span> </div> <div class="detail-name-val "> <strong>Perimeter</strong> <span>{item.perimeter}m</span> </div> <div each="{value, name  in item.types}" class="detail-name-val "> <strong>{name}</strong> <span>{value}</span> </div> </div> </div> <detail-item-news if="{this.detail.relatedNews}" data-item="{this.detail.relatedNews}"></detail-item-news> </div> </div>', 'detail-parks .assetlist td>button.active,[data-is="detail-parks"] .assetlist td>button.active{ outline: 1px solid var(--color-extra-fg); } detail-parks .assetlist content-box,[data-is="detail-parks"] .assetlist content-box{ margin-bottom: 0; } detail-parks .speciallist tr:first-child td,[data-is="detail-parks"] .speciallist tr:first-child td{ padding-top: 5px; } detail-parks .speciallist tr:last-child td,[data-is="detail-parks"] .speciallist tr:last-child td{ padding-bottom: 5px; border-bottom: 1px solid #ccc; } detail-parks td:last-child[colspan],[data-is="detail-parks"] td:last-child[colspan]{ text-align: left; } detail-parks .statrow,[data-is="detail-parks"] .statrow{ display: none } detail-parks .statrow:nth-child(-n+11),[data-is="detail-parks"] .statrow:nth-child(-n+11){ display: table-row; } detail-parks .statrow td:nth-child(n+2),[data-is="detail-parks"] .statrow td:nth-child(n+2){ text-align: center; } detail-parks .filter,[data-is="detail-parks"] .filter{ width: 100%; } detail-parks .flex,[data-is="detail-parks"] .flex{ flex-flow: row; justify-content: space-between; } detail-parks .filter label,[data-is="detail-parks"] .filter label{ flex-basis: 49%; }', '', function (opts) {
+  var _this = this;
+
+  var self = this;
+  this.loaded = false;
+  this.includedType = -1;
+  this.excludedType = -1;
+  this.superPark = {
+    number: 0,
+    area: 0,
+    perimeter: 0
+  };
+  this.assetDetails = false;
+
+  this.toParams = function (asset) {
+    return {
+      label: asset.parkname,
+      sub: "".concat(asset.distance, "m"),
+      details: Object.keys(asset.data).reduce(function (r, a) {
+        r.push({
+          label: a,
+          value: asset.data[a],
+          noicon: true
+        });
+        return r;
+      }, [])
+    };
+  };
+
+  this.filterAssets = function (type) {
+    if (typeof type == "string") {
+      type = {
+        name: type
+      };
+    }
+
+    var filtered = this.detail.assets.filter(function (a) {
+      return a.name.toLowerCase() == type.name.toLowerCase();
+    });
+    filtered.forEach(function (a) {
+      a.distance = Math.round(google.maps.geometry.spherical.computeDistanceBetween({
+        lng: function lng() {
+          return a.location.coordinates[0];
+        },
+        lat: function lat() {
+          return a.location.coordinates[1];
+        }
+      }, {
+        lng: function lng() {
+          return app.location.current.point.lng;
+        },
+        lat: function lat() {
+          return app.location.current.point.lat;
+        }
+      }));
+    });
+    filtered.sort(function (a, b) {
+      return a.distance - b.distance;
+    });
+    return filtered;
+  };
+
+  this.findType = function (type) {
+    var data = this.detail.orderedTypes.filter(function (a) {
+      return a.name.toLowerCase() == type.toLowerCase();
+    }).pop();
+    return data;
+  };
+
+  this.fixValue = function (value) {
+    if (value) {
+      return value.replace(/Unknown|null/gi, "");
+    } else {
+      return "";
+    }
+  };
+
+  this.on("mount", function () {
+    _this.update();
+  });
+  this.on("onmount", function () {});
+  this.on("update", function () {
+    var _this2 = this;
+
+    this.detail = this.parent ? this.parent.detail : this.opts.dataDetail;
+    this.detail.hasHeader = !(this.detail.options && this.detail.options.no_header) && (this.detail.value || this.detail.label || this.detail.image || this.detail.desc);
+
+    if (!this.loaded) {
+      if (typeof google != "undefined" && this.detail.list.length > 1 && !this.detail.list[0].distance) {
+        this.detail.list.forEach(function (a) {
+          a.distance = google.maps.geometry.spherical.computeDistanceBetween({
+            lng: function lng() {
+              return a.centroid.coordinates[0];
+            },
+            lat: function lat() {
+              return a.centroid.coordinates[1];
+            }
+          }, {
+            lng: function lng() {
+              return app.location.current.point.lng;
+            },
+            lat: function lat() {
+              return app.location.current.point.lat;
+            }
+          });
+          a.distance = Math.round(a.distance);
+        });
+        this.detail.list.sort(function (a, b) {
+          return a.distance - b.distance;
+        });
+        this.detail.list.forEach(function (a) {
+          if (a.types) {
+            var types = a.types.split(",");
+            a.typeIds = types;
+            a.types = {};
+            types.forEach(function (b) {
+              a.types[_this2.detail.types[b]] = (a.types[_this2.detail.types[b]] || 0) + 1;
+            });
+          } else {
+            a.types = {};
+          }
+        });
+        this.detail.list.forEach(function (a) {
+          _this2.superPark.number++;
+          _this2.superPark.area += a.area;
+          _this2.superPark.perimeter += a.perimeter;
+        });
+        this.loaded = true;
+        console.log(this);
+      }
+    }
+  });
+
+  this.showMap = function (e) {
+    route("/map/layers/parks");
+  }.bind(this);
+
+  this.setFilterIn = function (e) {
+    var _this3 = this;
+
+    this.includedType = e.target.value;
+    this.detail.list.forEach(function (a) {
+      a.isHidden = _this3.isHidden(a);
+    });
+  }.bind(this);
+
+  this.setFilterEx = function (e) {
+    var _this4 = this;
+
+    this.excludedType = e.target.value;
+    this.detail.list.forEach(function (a) {
+      a.isHidden = _this4.isHidden(a);
+    });
+  }.bind(this);
+
+  this.showItemDesc = function (e) {
+    e.item.item.showDesc = e.item.item.showDesc ? false : true;
+  }.bind(this);
+
+  this.showSuperParkDesc = function (e) {
+    this.superPark.showDesc = this.superPark.showDesc ? false : true;
+  }.bind(this);
+
+  this.showAssetDesc = function (e) {
+    this.assetDetails = this.assetDetails ? false : true;
+  }.bind(this);
+
+  this.showAssetDetail = function (e) {
+    e.item.asset.showDetail = e.item.asset.showDetail ? false : true;
+  }.bind(this);
+
+  this.viewTypeList = function (e) {
+    e.item.type.showList = e.item.type.showList ? false : true;
+  }.bind(this);
+
+  this.viewTypeMap = function (e) {
+    route("/map/layers/parks;parks-" + e.item.type.name.toLowerCase());
+  }.bind(this);
+
+  this.isHidden = function (item) {
+    var _this5 = this;
+
+    if (this.includedType >= 0 && !item.typeIds) {
+      return true;
+    } else if (this.excludedType >= 0 && !item.typeIds) {
+      return false;
+    } else if (!item.typeIds) {
+      return false;
+    } else if (item.typeIds.some(function (a) {
+      return a == _this5.includedType;
+    })) {
+      if (item.typeIds.some(function (a) {
+        return a == _this5.excludedType;
+      })) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      if (item.typeIds.some(function (a) {
+        return a == _this5.excludedType;
+      })) {
+        return true;
+      } else {
+        return this.includedType >= 0;
+      }
+    }
+  };
+});
+"use strict";
+
+(function (app, riot) {
+  var _feature = "parks";
+  var _feature_asset = "parks_feats";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  var _colors = {
+    "Sports Park": "#6e99b5",
+    "Local/Community Park": "#da9ff9",
+    "Regional Park": "#54e346",
+    "Garden & Heritage Park": "#fff76a",
+    "Cemetery": "#393e46",
+    "Plant Nursery": "#ff8e71",
+    "Utility Park": "#c5a880",
+    "Residential Red Zone": "red"
+  };
+  var _legend = {
+    list: Object.keys(_colors).reduce(function (r, a) {
+      r.push({
+        label: a,
+        line: _colors[a]
+      });
+      return r;
+    }, [])
+  };
+  app.on("map/feature/detail/" + _feature_asset, function (map, f, e) {
+    f.setProperty("distance", Math.round(google.maps.geometry.spherical.computeDistanceBetween({
+      lng: function lng() {
+        return _maps.getCenter(f.getGeometry()).lng();
+      },
+      lat: function lat() {
+        return _maps.getCenter(f.getGeometry()).lat();
+      }
+    }, {
+      lng: function lng() {
+        return app.location.current.point.lng;
+      },
+      lat: function lat() {
+        return app.location.current.point.lat;
+      }
+    })));
+    var popup = {
+      detail: true,
+      data: {
+        title: f.getProperty("name"),
+        sub: f.getProperty("distance") + "m",
+        details: Object.keys(f.getProperty("data")).reduce(function (r, a) {
+          r.push({
+            label: a,
+            value: f.getProperty("data")[a],
+            noicon: true
+          });
+          return r;
+        }, [])
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    console.log(f);
+    return;
+  });
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var popup = {
+      detail: true,
+      data: {
+        title: f.getProperty("name"),
+        sub: f.getProperty("parktype")
+      }
+    };
+    var details = [];
+
+    if (f.getProperty("accessibility")) {
+      var a = f.getProperty("accessibility");
+      Object.keys(a).forEach(function (b) {
+        if (b == "equipment") {
+          a[b].forEach(function (c) {
+            details.push({
+              label: "equipment",
+              value: c
+            });
+          });
+        } else if (b != "id") {
+          details.push({
+            label: b,
+            value: a[b]
+          });
+        }
+      });
+      popup.openDetails = true;
+    }
+
+    details.push({
+      label: "area",
+      value: f.getProperty("area")
+    });
+    details.push({
+      label: "perimeter",
+      value: f.getProperty("perimeter")
+    });
+    popup.data.details = details;
+    app.tags.map.update({
+      popup: popup
+    });
+    console.log(f);
+    return;
+  }); //app.promise.map().then(() => app.tags.map.registerLegend(_feature, _legend.list));
+
+  $mn.on('layer/loaded/' + _feature + "-accessible", function (list) {
+    // app.maplegend.init( _legend).update();
+    if (list[0].getProperty("accessibility")) {
+      list.forEach(function (f) {
+        var p = new google.maps.Data.Feature({
+          geometry: new google.maps.LatLng(f.getProperty("centroid").coordinates[1], f.getProperty("centroid").coordinates[0])
+        });
+        f.toGeoJson(function (obj) {
+          return Object.keys(obj.properties).forEach(function (key) {
+            return p.setProperty(key, obj.properties[key]);
+          });
+        });
+        f.setProperty("centroidfeature", p);
+        $mn.isMap().data.add(p);
+      });
+    } //app.maplegend.updateLegend(_feature, _legend.list);
+
+  });
+  $mn.on('layer/loaded/' + _feature, function (list) {
+    app.maplegend.init(_legend).update(); //app.maplegend.updateLegend(_feature, _legend.list);
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var linecolor = _colors[feat.getProperty("parktype")];
+
+      var linestyle = {
+        strokeWeight: 1,
+        strokeColor: "rgba(255, 255, 255, 0.5)",
+        fillColor: linecolor,
+        fillOpacity: 0.8,
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        }
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    if (feat.getProperty("feature") == _feature_asset) {
+      riot.util.misc.extend(_style, {
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        },
+        strokeColor: "#3b69b2"
+      });
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+"use strict";
+
+riot.tag2('popup-roadcrashes', '<div style="margin-bottom:10px"> <loading if="{loading}"></loading> <div class="schedule-list" if="{list}"> <div each="{item in list}"> <div style="display:flex;justify-content:space-between"> <div> <span>{item.crashYear} - </span> <span>{item.crashSeverity}</span> </div> <div> <button class="detail-button" click="{moreDetails}">details</button> </div> </div> <div class="detail-section detail-data detail-flex flex-left" if="{item.moreInfo}"> <div class="detail-name-val" style="width:100%;flex-basis:100%"><strong>Involved</strong> <span if="{item.bicycle}">{item.bicycle>1?item.bicycle:⁗⁗} bicycle{item.bicycle>1?⁗s⁗:⁗⁗}</span> <span if="{item.bus}">{item.bus>1?item.bus:⁗⁗} bus{item.bus>1?⁗es⁗:⁗⁗}</span> <span if="{item.carStationWagon}">{item.carStationWagon>1?item.carStationWagon:⁗⁗} car{item.carStationWagon>1?⁗s⁗:⁗⁗}</span> <span if="{item.moped}">{item.moped>1?item.moped:⁗⁗} moped{item.moped>1?⁗s⁗:⁗⁗}</span> <span if="{item.motorcycle}">{item.motorcycle>1?item.motorcycle:⁗⁗} motorcycle{item.motorcycle>1?⁗s⁗:⁗⁗}</span> <span if="{item.pedestrian}">{item.pedestrian>1?item.pedestrian:⁗⁗} pedestrian{item.pedestrian>1?⁗s⁗:⁗⁗}</span> <span if="{item.schoolBus}">{item.schoolBus>1?item.schoolBus:⁗⁗} scool bus{item.schoolBus>1?⁗s⁗:⁗⁗}</span> <span if="{item.suv}">{item.suv>1?item.suv:⁗⁗} suv{item.suv>1?⁗s⁗:⁗⁗}</span> <span if="{item.taxi}">{item.taxi>1?item.taxi:⁗⁗} taxi{item.taxi>1?⁗s⁗:⁗⁗}</span> <span if="{item.train}">{item.train>1?item.train:⁗⁗} train{item.train>1?⁗s⁗:⁗⁗}</span> <span if="{item.tree}">{item.tree>1?item.tree:⁗⁗} tree{item.tree>1?⁗s⁗:⁗⁗}</span> <span if="{item.truck}">{item.truck>1?item.truck:⁗⁗} truck{item.truck>1?⁗s⁗:⁗⁗}</span> <span if="{item.vanOrUtility}">{item.truck>1?item.truck:⁗⁗} van{item.truck>1?⁗s⁗:⁗⁗}</span> <span if="{item.parkedVehicle}">{item.parkedVehicle>1?item.parkedVehicle:⁗⁗} parked vehicle{item.parkedVehicle>1?⁗s⁗:⁗⁗}</span> </div> <div class="detail-name-val" if="{item.crashLocation1}"><strong>Location</strong> <span> {item.crashLocation1} <virtual if="{item.crashLocation2}"> / {item.crashLocation2}</virtual> </span> </div> <div class="detail-name-val" if="{item.directionRoleDescription}"><strong>Direction</strong><span>{item.directionRoleDescription}</span></div> <div class="detail-name-val" if="{item.fatalCount}"><strong>deaths</strong><span>{item.fatalCount}</span></div> <div class="detail-name-val" if="{item.seriousInjuryCount}"><strong>serious injuries</strong><span>{item.seriousInjuryCount}</span></div> <div class="detail-name-val" if="{item.minorInjuryCount}"><strong>minor injuries</strong><span>{item.minorInjuryCount}</span></div> <div class="detail-name-val" if="{item.light}"><strong>light/dark</strong><span>{item.light}</span></div> <div class="detail-name-val" if="{item.weatherA}"><strong>Weather</strong><span>{item.weatherA} <virtual if="{item.weatherB}"> / {item.weatherB}</virtual></span> </div> </div> </div> </div> </div>', '', '', function (opts) {
+  var _this = this;
+
+  this.isSchedule = false;
+  this.loading = false;
+  this.data = null;
+  this.list = false;
+  var _dataset = 'roadcrashes';
+
+  this.moreDetails = function (e) {
+    e.item.item.moreInfo = !e.item.item.moreInfo;
+  }.bind(this);
+
+  this.getParams = function () {
+    return {
+      label: "Crash hotspot",
+      sub: "Number of crashes here: " + this.data.sub,
+      "yield": true
+    };
+  };
+
+  this.on("mount", function () {
+    _this.update();
+  });
+  this.on("update", function () {
+    if (_this.opts && _this.opts.dataContent) {
+      if (_this.data != _this.opts.dataContent) {
+        _this.data = _this.opts.dataContent;
+        _this.loading = false;
+        _this.isSchedule = false;
+        _this.schedule = [];
+        _this.list = false;
+        var url = "/app/router/detail.php?dataset=" + _dataset + "&geohash=" + _this.data.geohash;
+
+        _lib.ajax.$get(url, function (data) {
+          var _this2 = this;
+
+          this.list = JSON.parse(data);
+
+          if (this.data.filterYears && this.data.filterYears.length) {
+            this.list = this.list.filter(function (a) {
+              return _this2.data.filterYears.some(function (b) {
+                return b == a.crashYear;
+              });
+            });
+          }
+
+          if (this.data.filterUsers && this.data.filterUsers.length) {
+            this.data.filterUsers.forEach(function (a) {
+              if (a == "Cyclist") {
+                _this2.list = _this2.list.filter(function (a) {
+                  return a.bicycle > 0;
+                });
+              }
+
+              if (a == "Pedestrian") {
+                _this2.list = _this2.list.filter(function (a) {
+                  return a.pedestrian > 0;
+                });
+              }
+            });
+          }
+
+          this.update();
+        }.bind(_this));
+      }
+    }
+  });
+});
+riot.tag2('detail-roadcrashes', '<div class="wrapper" if="{detail}"> <div ref="list" class="detailsection" if="{detail.list}"> <div each="{item in detail.list}" hide="{item.hide||item.hideMain}" class="{item.class}"> <div class="detail-flex detail-section detail-header-table margin-top {bottom-corners:!item.showDesc}"> <div> <raw content="<div>{item.label}</div>"></raw> <raw content="<span>{item.values[0]} died this year</span>"></raw> </div> <div class="buttons"> <button class="{active:item.showDesc}" click="{showItemDesc}">Graph</button> </div> </div> <div hide="{!item.showDesc}" class="detail-section detail-data detail-flex flex-left"> <div style="height: 100px" id="{\'oid\'+item.data.id}"></div> </div> </div> <detail-item-news if="{this.detail.relatedNews}" data-item="{this.detail.relatedNews}"></detail-item-news> </div> <div class="detailsection" if="{detail.list}"> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>{detail.list[0].label}</div>"></raw> <raw content="<span>Recent 10 deaths</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>Month</th> <th>User</th> <th>Age</th> </tr> <tr each="{detail.data}" class="statrow"> <td style="width:30%">{month}</td> <td style="width:50%">{user}</td> <td style="width:20%">{agegroup}</td> </tr> </table> </div> </div> <div class="detailsection" if="{detail.list}"> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Users</div>"></raw> <raw content="<span>Total / This year</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>User</th> <th colspan="2">New Zealand</th> <th colspan="2">{detail.list[0].label}</th> </tr> <tr> <th></th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> </tr> <tr each="{users}" class="statrow"> <td style="width:40%">{user}</td> <td style="width:15%">{all} </td> <td style="width:15%">{allyear}</td> <td style="width:15%">{cityall} </td> <td style="width:15%">{cityyear}</td> </tr> </table> </div> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Age groups</div>"></raw> <raw content="<span>Total / This year</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>Type</th> <th colspan="2">New Zealand</th> <th colspan="2">{detail.list[0].label}</th> </tr> <tr> <th></th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> </tr> <tr each="{ages}" class="statrow"> <td style="width:40%">{age}</td> <td style="width:15%">{all}</td> <td style="width:15%">{allyear}</td> <td style="width:15%">{cityall}</td> <td style="width:15%">{cityyear}</td> </tr> </table> </div> </div>', 'detail-roadcrashes .statrow,[data-is="detail-roadcrashes"] .statrow{ display: none } detail-roadcrashes .statrow:nth-child(-n+11),[data-is="detail-roadcrashes"] .statrow:nth-child(-n+11){ display: table-row; } detail-roadcrashes .statrow td:nth-child(n+2),[data-is="detail-roadcrashes"] .statrow td:nth-child(n+2){ text-align: center; } detail-roadcrashes tr.statrow:nth-child(2n),[data-is="detail-roadcrashes"] tr.statrow:nth-child(2n){ background-color: #EEE; }', '', function (opts) {
+  var _this3 = this;
+
+  var self = this;
+  this.users = [];
+  this.ages = [];
+  this.on("mount", function () {
+    _this3.update();
+  });
+  this.on("update", function () {
+    this.detail = this.parent ? this.parent.detail : this.opts.dataDetail;
+    this.detail.hasHeader = !(this.detail.options && this.detail.options.no_header) && (this.detail.value || this.detail.label || this.detail.image || this.detail.desc);
+    if (this.detail && this.detail[0] && this.detail[0].icon2) this.detail[0].image = "/assets/svg/" + this.detail[0].icon2 + "-black.svg";
+    var users = {};
+    this.detail.users.usernzall.forEach(function (a) {
+      users[a.user] = {
+        all: a.c
+      };
+    });
+    this.detail.users.usernzyearl.forEach(function (a) {
+      users[a.user].year = a.c;
+    });
+    this.detail.users.usercityall.forEach(function (a) {
+      users[a.user].cityall = a.c;
+    });
+    this.detail.users.usercityyear.forEach(function (a) {
+      users[a.user].cityyear = a.c;
+    });
+    this.users = Object.keys(users).reduce(function (r, a) {
+      r.push({
+        user: a,
+        all: users[a].all,
+        allyear: users[a].year || 0,
+        cityall: users[a].cityall || 0,
+        cityyear: users[a].cityyear || 0
+      });
+      return r;
+    }, []);
+    var ages = {};
+    this.detail.ages.agenzall.forEach(function (a) {
+      ages[a.agegroup] = {
+        all: a.c
+      };
+    });
+    this.detail.ages.agenzyearl.forEach(function (a) {
+      ages[a.agegroup].year = a.c;
+    });
+    this.detail.ages.agecityall.forEach(function (a) {
+      ages[a.agegroup].cityall = a.c;
+    });
+    this.detail.ages.agecityyear.forEach(function (a) {
+      ages[a.agegroup].cityyear = a.c;
+    });
+    this.ages = Object.keys(ages).reduce(function (r, a) {
+      r.push({
+        age: a,
+        all: ages[a].all,
+        allyear: ages[a].year || 0,
+        cityall: ages[a].cityall || 0,
+        cityyear: ages[a].cityyear || 0
+      });
+      return r;
+    }, []);
+  });
+
+  this.showItemDesc = function (e) {
+    var ret;
+    e.item.item.showDesc = e.item.item.showDesc ? false : true;
+
+    if (e.item.item.showDesc && !e.item.item.graphData) {
+      e.item.item.graphData = true;
+      ret = this.detail.graphs[e.item.item.data.graph];
+      var width = parseInt(getComputedStyle(this.refs.list).width) - 30;
+      document.getElementById("oid" + e.item.item.data.id).style.width = width + "px";
+      Plotly.plot(document.getElementById("oid" + e.item.item.data.id), [ret], {
+        margin: {
+          t: 10,
+          b: 30,
+          l: 30,
+          r: 0
+        },
+        width: width - 5,
+        autosize: true,
+        paper_bgcolor: "#fff",
+        plot_bgcolor: "transparent"
+      }, {
+        scrollZoom: false,
+        staticPlot: true,
+        responsive: true,
+        width: width,
+        displayModeBar: false
+      });
+    }
+  }.bind(this);
+});
+"use strict";
+
+(function (app, riot) {
+  var _feature = "roadcrashes";
+  var _feature_detail = "roadcrashes_detail";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  var _data = [];
+  var _yearsData = [];
+  var _currentMax = 0;
+
+  var _heatmap;
+
+  var _options = {
+    gradient: ["rgba(0,0,0,0.7)", "rgb(255,237,160)", "rgb(254,178,76)", "rgb(240,59,32)", "rgb(255,0,0)"],
+    radius: 10,
+    opacity: 0.8
+  };
+
+  var _checkTimeout;
+
+  var _legend = {
+    list: [{
+      line: "linear-gradient(to right, rgba(0,0,0,0.7), rgb(255,237,160), rgb(254,178,76), rgb(240,59,32), rgb(255,0,0))",
+      label: "crash count less to more"
+    }],
+    filter: {
+      show: false,
+      options: []
+    }
+  };
+  var _filterListYears = [],
+      _filterListUsers = [],
+      _filterKey = "",
+      _filterActive = false;
+
+  _legend.filter.options.push({
+    label: "Involved",
+    heading: true,
+    cols: 2
+  }); // _legend.filter.options.push({ label: 'All years', checked: true });
+
+
+  _legend.filter.options.push({
+    group: "user",
+    label: 'Pedestrian',
+    "default": false
+  });
+
+  _legend.filter.options.push({
+    group: "user",
+    label: 'Cyclist',
+    "default": false
+  });
+
+  _legend.filter.options.push({
+    label: "Year",
+    heading: true,
+    cols: 2
+  }); // _legend.filter.options.push({ label: 'All years', checked: true });
+
+
+  for (var _i = new Date().getFullYear(); _i >= 2000; _i--) {
+    _legend.filter.options.push({
+      group: "year",
+      label: _i,
+      "default": false
+    });
+  }
+
+  _legend.filter.callBack = function (options) {
+    var data = _filterActive ? _yearsData[_filterKey] : _data;
+    data.filter(function (a) {
+      return a.feature;
+    }).forEach(function (a) {
+      return $mn.isMap().data.remove(a.feature) || (a.feature = null);
+    });
+
+    if (options === false) {
+      _heatmap.setData(_data);
+
+      _currentMax = _data._max;
+      _filterListYears = [];
+      _filterKey = "";
+      _filterActive = false;
+      zoomChanged();
+    } else {
+      var goodyears = options.reduce(function (r, p) {
+        if (p.checked && p.group == "year") r.push(p.label);
+        return r;
+      }, []);
+      var goodusers = options.reduce(function (r, p) {
+        if (p.checked && p.group == "user") r.push(p.label);
+        return r;
+      }, []);
+      _filterActive = true;
+      _filterListYears = goodyears;
+      _filterListUsers = goodusers;
+      _filterKey = _filterListYears.join(",") + "|" + _filterListUsers.join(",");
+
+      if (_yearsData[_filterKey]) {
+        _heatmap.setData(_yearsData[_filterKey]);
+
+        _currentMax = _yearsData[_filterKey]._max;
+        zoomChanged();
+      } else {
+        var url = "/app/router/detail.php?dataset=" + _feature + "&filter=" + _filterKey;
+
+        _lib.ajax.$get(url, function (data) {
+          var dataJ = JSON.parse(data);
+          dataJ.forEach(function (a) {
+            return a.latlng = _lib.Geohash.decode(a.h);
+          });
+          var max = 0;
+          _yearsData[_filterKey] = dataJ.reduce(function (r, a) {
+            r.push({
+              location: new google.maps.LatLng(a.latlng.lat, a.latlng.lon),
+              weight: Math.pow(a.c, 1 / 2),
+              hash: a.h
+            });
+            max = Math.max(max, a.c);
+            return r;
+          }, []);
+          _yearsData[_filterKey]._max = max;
+
+          _heatmap.setData(_yearsData[_filterKey]);
+
+          _currentMax = _yearsData[_filterKey]._max;
+          zoomChanged();
+        }.bind(this));
+      }
+    }
+  };
+
+  app.on("map/feature/detail/" + _feature_detail, function (map, f, e) {
+    var popup = {
+      content: {
+        title: "Crash hotspot",
+        sub: f.getProperty("count"),
+        geohash: f.getProperty("geohash"),
+        filterYears: _filterActive ? _filterListYears : false,
+        filterUsers: _filterActive ? _filterListUsers : false
+      },
+      tag: "popup-roadcrashes"
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+
+  function featureCheck() {
+    clearTimeout(_checkTimeout);
+    _checkTimeout = setTimeout(function () {
+      if ($mn.layers.has(_feature)) {
+        var zoom = $mn.zoom();
+        var data = _filterActive ? _yearsData[_filterKey] : _data;
+
+        if (zoom > 17) {
+          if ($mn.isMap().getBounds()) data.filter(function (a) {
+            return !a.feature && $mn.isMap().getBounds().contains(a.location);
+          }).forEach(function (a) {
+            var f = new google.maps.Data.Feature();
+            f.setGeometry(a.location);
+            f.setProperty("count", Math.round(Math.pow(a.weight, 2)));
+            f.setProperty("label", _feature);
+            f.setProperty("feature", _feature_detail);
+            f.setProperty("geohash", a.hash);
+            a.feature = f;
+            $mn.isMap().data.add(f);
+          });
+        } else {
+          data.filter(function (a) {
+            return a.feature;
+          }).forEach(function (a) {
+            return $mn.isMap().data.remove(a.feature) || (a.feature = null);
+          });
+        }
+      }
+
+      ;
+      $mn.one('bounds/changed', featureCheck);
+    }, 100);
+  }
+
+  function zoomChanged() {
+    var map = $mn.isMap();
+    var zoom = $mn.zoom();
+    var localMax;
+
+    if ($mn.isMap().getBounds()) {
+      var data = _filterActive ? _yearsData[_filterKey] : _data;
+      localMax = Math.round(Math.pow(data.filter(function (a) {
+        return $mn.isMap().getBounds().contains(a.location);
+      }).reduce(function (r, a) {
+        return Math.max(a.weight, r);
+      }, 0), 2));
+    } else {
+      localMax = _currentMax;
+    }
+
+    if (zoom > 16) {
+      _heatmap.setOptions({
+        radius: 30,
+        opacity: 1,
+        maxIntensity: localMax
+      });
+    } else if (zoom > 15) {
+      _heatmap.setOptions({
+        radius: 20,
+        opacity: 1,
+        maxIntensity: localMax
+      });
+    } else if (zoom > 14) {
+      _heatmap.setOptions({
+        radius: 15,
+        opacity: 0.9,
+        maxIntensity: localMax
+      });
+    } else if (zoom > 13) {
+      _heatmap.setOptions({
+        radius: 12,
+        opacity: 0.9,
+        maxIntensity: localMax
+      });
+    } else if (zoom > 11) {
+      _heatmap.setOptions({
+        radius: _options.radius,
+        opacity: _options.opacity,
+        maxIntensity: localMax
+      });
+    } else {
+      _heatmap.setOptions({
+        radius: 5,
+        opacity: _options.opacity,
+        maxIntensity: localMax
+      });
+    }
+
+    featureCheck();
+  }
+
+  $mn.one('bounds/changed', featureCheck);
+  /* $mn.one("map/idle", () => {
+      $mn.isMap().addListener('zoom_changed',zoomChanged)
+  });
+  */
+
+  $mn.on('layer/unloaded/' + _feature, function () {
+    if ($mn.isMap() && $mn.isMap().removeListener) $mn.isMap().removeListener('zoom_changed', zoomChanged);
+    var data = _filterActive ? _yearsData[_filterKey] : _data;
+    data.filter(function (a) {
+      return a.feature;
+    }).forEach(function (a) {
+      return $mn.isMap().data.remove(a.feature);
+    });
+    $mn.isMap().data.forEach(function (a) {
+      return a.getProperty("feature") == _feature_detail && $mn.isMap().data.remove(a);
+    });
+
+    _heatmap.setMap(null);
+  });
+  $mn.on('layer/loaded/' + _feature, function (list) {
+    _data = list[0].getProperty("data");
+
+    _data.forEach(function (a) {
+      return a.latlng = _lib.Geohash.decode(a.h);
+    });
+
+    var max = 0;
+    _data = _data.reduce(function (r, a) {
+      r.push({
+        location: new google.maps.LatLng(a.latlng.lat, a.latlng.lon),
+        weight: Math.pow(a.c, 1 / 2),
+        hash: a.h
+      });
+      max = Math.max(max, a.c);
+      return r;
+    }, []);
+    _currentMax = _data._max = max;
+    _heatmap = new google.maps.visualization.HeatmapLayer({
+      data: _data
+    });
+
+    _heatmap.setMap($mn.isMap());
+
+    _heatmap.setOptions(_options);
+
+    $mn.isMap().addListener('zoom_changed', zoomChanged);
+    zoomChanged(); //app.tags.map.updateLegend(_feature, _legend.list, _legend.filter);
+
+    app.maplegend.init(_legend).update();
+    app.alert.set({
+      title: "Legend",
+      expandedJustOnce: "alert-legend-roadcrashes",
+      msg: "<p>Reported road crashes since 2000</p><p>Updated on a quarterly basis by the NZ Police.</p><p>You can filter the heatmap by year and if a Cyclist or a Pedestrian was involved.</p><p>When you zoom in enough you can see details of all individual crashes.</p>"
+    });
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var linestyle = {
+        visible: false,
+        zIndex: 5
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    if (feat.getProperty("feature") == _feature_detail) {
+      var linestyle = {
+        icon: {
+          url: _icon,
+          scaledSize: app.conf.mapIconSize()
+        }
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+
+riot.tag2('detail-roaddeath', '<div class="wrapper" if="{detail}"> <div ref="list" class="detailsection" if="{detail.list}"> <div each="{item in detail.list}" hide="{item.hide||item.hideMain}" class="{item.class}"> <div class="detail-flex detail-section detail-header-table margin-top {bottom-corners:!item.showDesc}"> <div> <raw content="<div>{item.label}</div>"></raw> <raw content="<span>{item.values[0]} died this year</span>"></raw> </div> <div class="buttons"> <button class="{active:item.showDesc}" click="{showItemDesc}">Graph</button> </div> </div> <div hide="{!item.showDesc}" class="detail-section detail-data detail-flex flex-left"> <div style="height: 100px" id="{\'oid\'+item.data.id}"></div> </div> </div> <detail-item-news if="{this.detail.relatedNews}" data-item="{this.detail.relatedNews}"></detail-item-news> </div> <div class="detailsection" if="{detail.list}"> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>{detail.list[0].label}</div>"></raw> <raw content="<span>Recent 10 deaths</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>Month</th> <th>User</th> <th>Age</th> </tr> <tr each="{detail.data}" class="statrow"> <td style="width:30%">{month}</td> <td style="width:50%">{user}</td> <td style="width:20%">{agegroup}</td> </tr> </table> </div> </div> <div class="detailsection" if="{detail.list}"> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Users</div>"></raw> <raw content="<span>Total / This year</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>User</th> <th colspan="2">New Zealand</th> <th colspan="2">{detail.list[0].label}</th> </tr> <tr> <th></th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> </tr> <tr each="{users}" class="statrow"> <td style="width:40%">{user}</td> <td style="width:15%">{all} </td> <td style="width:15%">{allyear}</td> <td style="width:15%">{cityall} </td> <td style="width:15%">{cityyear}</td> </tr> </table> </div> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Age groups</div>"></raw> <raw content="<span>Total / This year</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>Type</th> <th colspan="2">New Zealand</th> <th colspan="2">{detail.list[0].label}</th> </tr> <tr> <th></th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> <th>Total</th> <th>{(new Date()).getFullYear()}</th> </tr> <tr each="{ages}" class="statrow"> <td style="width:40%">{age}</td> <td style="width:15%">{all}</td> <td style="width:15%">{allyear}</td> <td style="width:15%">{cityall}</td> <td style="width:15%">{cityyear}</td> </tr> </table> </div> </div>', 'detail-roaddeath .statrow,[data-is="detail-roaddeath"] .statrow{ display: none } detail-roaddeath .statrow:nth-child(-n+11),[data-is="detail-roaddeath"] .statrow:nth-child(-n+11){ display: table-row; } detail-roaddeath .statrow td:nth-child(n+2),[data-is="detail-roaddeath"] .statrow td:nth-child(n+2){ text-align: center; } detail-roaddeath tr.statrow:nth-child(2n),[data-is="detail-roaddeath"] tr.statrow:nth-child(2n){ background-color: #EEE; }', '', function (opts) {
+  var _this = this;
+
+  var self = this;
+  this.users = [];
+  this.ages = [];
+  this.on("mount", function () {
+    _this.update();
+  });
+  this.on("update", function () {
+    this.detail = this.parent ? this.parent.detail : this.opts.dataDetail;
+    this.detail.hasHeader = !(this.detail.options && this.detail.options.no_header) && (this.detail.value || this.detail.label || this.detail.image || this.detail.desc);
+    if (this.detail && this.detail[0] && this.detail[0].icon2) this.detail[0].image = "/assets/svg/" + this.detail[0].icon2 + "-black.svg";
+    var users = {};
+    this.detail.users.usernzall.forEach(function (a) {
+      users[a.user] = {
+        all: a.c
+      };
+    });
+    this.detail.users.usernzyearl.forEach(function (a) {
+      users[a.user].year = a.c;
+    });
+    this.detail.users.usercityall.forEach(function (a) {
+      users[a.user].cityall = a.c;
+    });
+    this.detail.users.usercityyear.forEach(function (a) {
+      users[a.user].cityyear = a.c;
+    });
+    this.users = Object.keys(users).reduce(function (r, a) {
+      r.push({
+        user: a,
+        all: users[a].all,
+        allyear: users[a].year || 0,
+        cityall: users[a].cityall || 0,
+        cityyear: users[a].cityyear || 0
+      });
+      return r;
+    }, []);
+    var ages = {};
+    this.detail.ages.agenzall.forEach(function (a) {
+      ages[a.agegroup] = {
+        all: a.c
+      };
+    });
+    this.detail.ages.agenzyearl.forEach(function (a) {
+      ages[a.agegroup].year = a.c;
+    });
+    this.detail.ages.agecityall.forEach(function (a) {
+      ages[a.agegroup].cityall = a.c;
+    });
+    this.detail.ages.agecityyear.forEach(function (a) {
+      ages[a.agegroup].cityyear = a.c;
+    });
+    this.ages = Object.keys(ages).reduce(function (r, a) {
+      r.push({
+        age: a,
+        all: ages[a].all,
+        allyear: ages[a].year || 0,
+        cityall: ages[a].cityall || 0,
+        cityyear: ages[a].cityyear || 0
+      });
+      return r;
+    }, []);
+  });
+
+  this.showItemDesc = function (e) {
+    var ret;
+    e.item.item.showDesc = e.item.item.showDesc ? false : true;
+
+    if (e.item.item.showDesc && !e.item.item.graphData) {
+      e.item.item.graphData = true;
+      ret = this.detail.graphs[e.item.item.data.graph];
+      var width = parseInt(getComputedStyle(this.refs.list).width) - 30;
+      document.getElementById("oid" + e.item.item.data.id).style.width = width + "px";
+      Plotly.plot(document.getElementById("oid" + e.item.item.data.id), [ret], {
+        margin: {
+          t: 10,
+          b: 30,
+          l: 30,
+          r: 0
+        },
+        width: width - 5,
+        autosize: true,
+        paper_bgcolor: "#fff",
+        plot_bgcolor: "transparent"
+      }, {
+        scrollZoom: false,
+        staticPlot: true,
+        responsive: true,
+        width: width,
+        displayModeBar: false
+      });
+    }
+  }.bind(this);
+});
+"use strict";
+
+(function (app, riot) {
+  var _feature = "stravacounts";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var popup = {
+      detail: true,
+      data: {
+        title: "Strava count",
+        sub: f.getProperty("count")
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  $mn.one("map/idle", function () {
+    $mn.isMap().addListener('zoom_changed', function () {
+      var map = $mn.isMap();
+      var zoom = $mn.zoom(); //var zoomFilter = [20, 19, 18, ];
+
+      setTimeout(function () {
+        map.data.forEach(function (f) {
+          if (f.getProperty("feature") == _feature) {
+            var exp10 = Math.floor(Math.log10(f.getProperty("count")));
+            map.data.overrideStyle(f, {
+              visible: zoom + exp10 > 15 || exp10 >= 3
+            });
+          }
+        });
+      }, 100);
+    });
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var p = feat.getProperty("count");
+      var zoom = $mn.zoom();
+      /*    var colors = [{ //white
+             red: 0,
+             green: 0,
+             blue: 0
+         }, { //yellow
+             red: 255,
+             green: 255,
+             blue: 0
+         }, { //orange
+             red: 255,
+             green: 128,
+             blue: 0
+         }, { //purple
+             red: 255,
+             green: 0,
+             blue: 128
+         }, { //red
+             red: 0,
+             green: 0,
+             blue: 255
+         }];
+           var exp10 = Math.floor(Math.log10(p));
+         var color1 = colors[exp10];
+         var color2 = colors[exp10 + 1];
+         var frac = p / Math.pow(10, exp10 + 1);
+             var linecolor = _lib.colorGradient(frac, color1, color2); */
+
+      var frac = p; //  frac += 100
+
+      frac /= 100;
+
+      var linecolor = _lib.colorGradient(frac, {
+        red: 0,
+        green: 255,
+        blue: 0
+      }, {
+        red: 255,
+        green: 0,
+        blue: 0
+      });
+
+      linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'; // linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'
+
+      var linestyle = {
+        strokeColor: linecolor,
+        strokeWeight: 3,
+        strokeOpacity: 0.8,
+        visible: zoom + exp10 > 15 || exp10 >= 3,
+        zIndex: 5
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+
+riot.tag2('detail-stolencars', '<div class="wrapper" if="{detail}"> <div class="detailsection"> <div> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Check if a vehicle is stolen</div>"></raw> </div> <div class="buttons"> <a class="detail-button" target="_blank" href="https://www.police.govt.nz/can-you-help-us/stolen-vehicles">police.govt.nz</a> </div> </div> </div> </div> <div ref="list" class="detailsection" if="{detail.list}"> <div each="{item in detail.list}" hide="{item.hide||item.hideMain}" class="{item.class}"> <div class="detail-flex detail-section detail-header-table margin-top {bottom-corners:!item.showDesc}"> <div> <raw content="<div>{item.label}</div>"></raw> <raw content="<span>{item.values[0]} stolen in last 6 months</span>"></raw> </div> <div class="buttons"> <button class="{active:item.showDesc}" click="{showItemDesc}">Graph</button> </div> </div> <div hide="{!item.showDesc}" class="detail-section detail-data detail-flex flex-left"> <div style="height: 100px" id="{\'oid\'+item.data.id}"></div> </div> </div> <detail-item-news if="{this.detail.relatedNews}" data-item="{this.detail.relatedNews}"></detail-item-news> </div> <div class="detailsection" if="{detail.stats}"> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Statistics - Top 10</div>"></raw> <raw content="<span>By vehicle type</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>Type</th> <th>New Zealand</th> <th>{detail.list[0].label}</th> </tr> <tr each="{stats.types}" class="statrow"> <td style="width:50%">{type}</td> <td style="width:25%">{all}</td> <td style="width:25%">{region}</td> </tr> </table> </div> <div class="detail-flex detail-section detail-header-table margin-top "> <div> <raw content="<div>Statistics - Top 10</div>"></raw> <raw content="<span>By vehicle brand</span>"></raw> </div> </div> <div class="detail-section detail-data detail-flex flex-left"> <table style="width:100%"> <tr> <th>Type</th> <th>New Zealand</th> <th>{detail.list[0].label}</th> </tr> <tr each="{stats.brands}" class="statrow"> <td style="width:50%">{brand}</td> <td style="width:25%">{all}</td> <td style="width:25%">{region}</td> </tr> </table> </div> </div>', 'detail-stolencars .statrow,[data-is="detail-stolencars"] .statrow{ display: none } detail-stolencars .statrow:nth-child(-n+11),[data-is="detail-stolencars"] .statrow:nth-child(-n+11){ display: table-row; } detail-stolencars .statrow td:nth-child(n+2),[data-is="detail-stolencars"] .statrow td:nth-child(n+2){ text-align: center; }', '', function (opts) {
+  var _this = this;
+
+  var self = this;
+  this.stats = {
+    "types": [],
+    "brands": []
+  };
+  this.on("mount", function () {
+    _this.update();
+  });
+  this.on("onmount", function () {});
+  this.on("update", function () {
+    this.detail = this.parent ? this.parent.detail : this.opts.dataDetail;
+    this.detail.hasHeader = !(this.detail.options && this.detail.options.no_header) && (this.detail.value || this.detail.label || this.detail.image || this.detail.desc);
+    if (this.detail && this.detail[0] && this.detail[0].icon2) this.detail[0].image = "/assets/svg/" + this.detail[0].icon2 + "-black.svg";
+    var types = {};
+    this.detail.stats.type.all.forEach(function (a) {
+      types[a.type] = {
+        all: a.c
+      };
+    });
+    this.detail.stats.type.region.forEach(function (a) {
+      types[a.type].region = a.c;
+    });
+    this.stats.types = Object.keys(types).reduce(function (r, a) {
+      r.push({
+        type: a,
+        all: types[a].all,
+        region: types[a].region || 0
+      });
+      return r;
+    }, []);
+    var brands = {};
+    this.detail.stats.brand.all.forEach(function (a) {
+      brands[a.brand] = {
+        all: a.c
+      };
+    });
+    this.detail.stats.brand.region.forEach(function (a) {
+      brands[a.brand].region = a.c;
+    });
+    this.stats.brands = Object.keys(brands).reduce(function (r, a) {
+      r.push({
+        brand: a,
+        all: brands[a].all,
+        region: brands[a].region || 0
+      });
+      return r;
+    }, []);
+  });
+
+  this.showItemDesc = function (e) {
+    var _this2 = this;
+
+    var ret;
+    e.item.item.showDesc = e.item.item.showDesc ? false : true;
+
+    if (e.item.item.showDesc && !e.item.item.graphData) {
+      e.item.item.graphData = true;
+      ret = Object.keys(this.detail.data[e.item.item.label].graph).sort().reduce(function (r, a) {
+        r.x.push(a);
+        r.y.push(_this2.detail.data[e.item.item.label].graph[a]);
+        return r;
+      }, {
+        x: [],
+        y: []
+      });
+      var width = parseInt(getComputedStyle(this.refs.list).width) - 20;
+      document.getElementById("oid" + e.item.item.data.id).style.width = width + "px";
+      Plotly.plot(document.getElementById("oid" + e.item.item.data.id), [ret], {
+        margin: {
+          t: 0,
+          b: 30,
+          l: 20,
+          r: 0
+        },
+        width: width - 5,
+        autosize: true,
+        paper_bgcolor: "#fff",
+        plot_bgcolor: "transparent"
+      }, {
+        scrollZoom: false,
+        staticPlot: true,
+        responsive: true,
+        width: width,
+        displayModeBar: false
+      });
+    }
+  }.bind(this);
+});
+"use strict";
+
+(function (app, riot) {
+  var _feature = "stravacounts";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var popup = {
+      detail: true,
+      data: {
+        title: "Strava count",
+        sub: f.getProperty("count")
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    return;
+  });
+  $mn.one("map/idle", function () {
+    $mn.isMap().addListener('zoom_changed', function () {
+      var map = $mn.isMap();
+      var zoom = $mn.zoom(); //var zoomFilter = [20, 19, 18, ];
+
+      setTimeout(function () {
+        map.data.forEach(function (f) {
+          if (f.getProperty("feature") == _feature) {
+            var exp10 = Math.floor(Math.log10(f.getProperty("count")));
+            map.data.overrideStyle(f, {
+              visible: zoom + exp10 > 15 || exp10 >= 3
+            });
+          }
+        });
+      }, 100);
+    });
+  });
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var p = feat.getProperty("count");
+      var zoom = $mn.zoom();
+      /*    var colors = [{ //white
+             red: 0,
+             green: 0,
+             blue: 0
+         }, { //yellow
+             red: 255,
+             green: 255,
+             blue: 0
+         }, { //orange
+             red: 255,
+             green: 128,
+             blue: 0
+         }, { //purple
+             red: 255,
+             green: 0,
+             blue: 128
+         }, { //red
+             red: 0,
+             green: 0,
+             blue: 255
+         }];
+           var exp10 = Math.floor(Math.log10(p));
+         var color1 = colors[exp10];
+         var color2 = colors[exp10 + 1];
+         var frac = p / Math.pow(10, exp10 + 1);
+             var linecolor = _lib.colorGradient(frac, color1, color2); */
+
+      var frac = p; //  frac += 100
+
+      frac /= 100;
+
+      var linecolor = _lib.colorGradient(frac, {
+        red: 0,
+        green: 255,
+        blue: 0
+      }, {
+        red: 255,
+        green: 0,
+        blue: 0
+      });
+
+      linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'; // linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'
+
+      var linestyle = {
+        strokeColor: linecolor,
+        strokeWeight: 3,
+        strokeOpacity: 0.8,
+        visible: zoom + exp10 > 15 || exp10 >= 3,
+        zIndex: 5
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "hex";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var color = _lib.getLimeColor(feat.getProperty("c") * 2.5);
+
+      var linestyle = {
+        strokeWeight: 1,
+        strokeColor: 'rgba(255, 255, 255, 0.5)',
+        fillColor: color,
+        fillOpacity: 1
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "ticketsrfs";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  var _groups = {},
+      _wards = {};
+  var _legend = {
+    list: [{
+      line: "linear-gradient(to right, rgb(255,255,255), red)",
+      label: "ticket count 0 to 100+"
+    }],
+    filter: {
+      show: false,
+      options: []
+    }
+  };
+  var _filterListWards = [],
+      _filterListGroups = [],
+      _filterActive = false;
+  localStorage.removeItem('map/ticketsrfs');
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var details = f.getProperty("data").map(function (a) {
+      return {
+        label: a.name,
+        value: a.count
+      };
+    });
+    var popup = {
+      detail: true,
+      data: {
+        title: "Ticket counts",
+        sub: f.getProperty("count"),
+        details: details
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    console.log(f);
+    return;
+  }); //app.promise.map().then(() => app.tags.map.registerLegend(_feature, _legend.list));
+
+  _legend.filter.callBack = function (options) {
+    if (options === false) {
+      $mn.isMap().data.forEach(function (a) {
+        if (a.getProperty('feature') == _feature) {
+          a.setProperty('visible', true);
+          var p = a.getProperty("count");
+          a.setProperty("currentcount", p);
+          var linecolor = getColor(p);
+          var opacity = getOpacity(p);
+          $mn.isMap().data.overrideStyle(a, {
+            visible: true && p > 0,
+            fillColor: linecolor,
+            fillOpacity: opacity
+          });
+        }
+      });
+      _filterListWards = [];
+      _filterListGroups = [];
+      _filterActive = false;
+    } else {
+      var goodwards = options.reduce(function (r, p) {
+        if (p.checked && p.group == "ward") r.push(p.label);
+        return r;
+      }, []);
+      var goodtypes = options.reduce(function (r, p) {
+        if (p.checked && p.group == "group") r.push(p.label);
+        return r;
+      }, []);
+      var badtypes = options.reduce(function (r, p) {
+        if (!p.checked && p.group == "group") r.push(p.label);
+        return r;
+      }, []);
+      _filterActive = true;
+      _filterListWards = goodwards;
+      _filterListGroups = goodtypes;
+      $mn.isMap().data.forEach(function (a) {
+        if (a.getProperty('feature') == _feature) {
+          var visible = true;
+
+          if (goodwards.length > 0) {
+            visible = goodwards.some(function (b) {
+              return a.getProperty('wards').split(";").some(function (c) {
+                return c == b;
+              });
+            });
+          }
+
+          if (badtypes.length > 0) {
+            var data = a.getProperty("data");
+            var p = data.reduce(function (r, a) {
+              if (goodtypes.some(function (b) {
+                return a.name == b;
+              })) {
+                return r + a.count;
+              } else {
+                return r;
+              }
+            }, 0);
+          } else {
+            var p = a.getProperty("count");
+          }
+
+          a.setProperty("currentcount", p);
+          var linecolor = getColor(p);
+          var opacity = getOpacity(p);
+          a.setProperty('visible', visible);
+          $mn.isMap().data.overrideStyle(a, {
+            visible: visible && p > 0,
+            fillColor: linecolor,
+            fillOpacity: opacity
+          });
+        }
+      });
+    }
+  };
+
+  $mn.on('layer/loaded/' + _feature, function (list) {
+    list.forEach(function (a) {
+      a.setProperty("currentcount", a.getProperty("count"));
+      a.getProperty("data").forEach(function (b) {
+        _groups[b.name] = (_groups[b.name] || 0) + b.count;
+      });
+      var wards = a.getProperty("wards").split(";");
+      wards.forEach(function (b) {
+        _wards[b] = (_wards[b] || 0) + a.getProperty("count");
+      });
+    });
+
+    _legend.filter.options.push({
+      label: "Types",
+      heading: true,
+      cols: 2
+    }); //_legend.filter.options.push({ label: 'All types', checked: true });
+
+
+    Object.keys(_groups).forEach(function (a) {
+      _legend.filter.options.push({
+        group: "group",
+        label: a,
+        checked: true,
+        "default": true,
+        value: _groups[a]
+      });
+    });
+
+    _legend.filter.options.push({
+      label: "Wards",
+      heading: true,
+      cols: 2
+    }); //_legend.filter.options.push({ label: 'All wards', checked: true });
+
+
+    Object.keys(_wards).forEach(function (a) {
+      _legend.filter.options.push({
+        group: "ward",
+        label: a,
+        "default": false,
+        value: _wards[a]
+      });
+    }); //   app.tags.map.updateLegend(_feature, _legend.list, _legend.filter);
+
+    app.maplegend.init(_legend).update();
+    app.alert.set({
+      "msg": "Tickets reported in last 30 days, only includes Park, Transport and Graffiti categories.",
+      "title": "Info"
+    });
+  }); //$mn.layers.delete("poweroutage"); $mn.isMap().data.addGeoJson(x);
+
+  function getColor(p) {
+    var frac = p / 100; //  frac += 100
+
+    frac = Math.max(0, Math.log2(p / 2) / Math.log2(100));
+
+    var linecolor = _lib.colorGradient(frac, {
+      red: 255,
+      green: 255,
+      blue: 255
+    }, {
+      red: 255,
+      green: 0,
+      blue: 0
+    });
+
+    linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')';
+    return linecolor;
+  }
+
+  function getOpacity(p) {
+    var opacity = 0.8;
+
+    if (p < 10) {
+      if (p == 0) {
+        opacity = 0;
+      } else {
+        opacity -= (10 - p) / (10 * 1.5);
+      }
+    }
+
+    return opacity;
+  }
+
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var p = feat.getProperty("currentcount");
+      var linecolor = getColor(p); // linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'
+
+      var opacity = getOpacity(p); //console.log(opacity, frac, p, linecolor);
+
+      var v = true;
+
+      if (typeof feat.getProperty('visible') == 'boolean') {
+        v = feat.getProperty('visible');
+      }
+
+      var linestyle = {
+        strokeWeight: 1,
+        strokeColor: "rgba(255, 255, 255, 0.5)",
+        fillColor: linecolor,
+        fillOpacity: opacity,
+        visible: v && p > 0
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);
+"use strict";
+"use strict";
+
+(function (app, riot) {
+  var _feature = "waterusage";
+  var _icon = "/assets/publica/sets/Find_Pin_Map.svg";
+  app.on("map/feature/detail/" + _feature, function (map, f, e) {
+    var popup = {
+      detail: true,
+      data: {
+        title: "Water usage percentile",
+        sub: f.getProperty("rating"),
+        details: [{
+          label: "usage sum",
+          value: f.getProperty("sumusage") + "m³"
+        }, {
+          label: "allowance over limit sum",
+          value: f.getProperty("sumover") + "m³"
+        }]
+      }
+    };
+    app.tags.map.update({
+      popup: popup
+    });
+    console.log(f);
+    return;
+  });
+  app.promise.map().then(function () {
+    return app.tags.map.registerLegend(_feature, [{
+      line: "linear-gradient(to right, rgb(0,255,255), red)",
+      label: "water usage percentile 0 to 100"
+    }]);
+  }); //$mn.layers.delete("poweroutage"); $mn.isMap().data.addGeoJson(x);
+
+  app.on("map/feature/style", function (feat, style) {
+    // {feat, style}
+    var _style = {};
+
+    if (feat.getProperty("feature") == _feature) {
+      var p = feat.getProperty("rating");
+      var frac = p; //  frac += 100
+
+      var linecolor = _lib.colorGradient(frac, {
+        red: 0,
+        green: 255,
+        blue: 255
+      }, {
+        red: 255,
+        green: 0,
+        blue: 0
+      });
+
+      linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'; // linecolor = 'rgb(' + Math.max(0, linecolor.red) + ',' + Math.max(0, linecolor.green) + ',' + Math.max(0, linecolor.blue) + ')'
+
+      var opacity = 0.8;
+      var linestyle = {
+        strokeWeight: 1,
+        strokeColor: "rgba(255, 255, 255, 0.5)",
+        fillColor: linecolor,
+        fillOpacity: opacity
+      };
+      riot.util.misc.extend(_style, linestyle);
+    }
+
+    riot.util.misc.extend(style, _style);
+  });
+})(app, riot);

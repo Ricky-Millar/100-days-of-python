@@ -1,0 +1,23 @@
+#This is just an example of the layout of the code that the exersie api sends back
+
+{
+  "exercises": [
+    {
+      "tag_id": 317,
+      "user_input": "ran",
+      "duration_min": 105.66,
+      "met": 9.8,
+      "nf_calories": 1294.34,
+      "photo": {
+        "highres": "https://d2xdmhkmkbyw75.cloudfront.net/exercise/317_highres.jpg",
+        "thumb": "https://d2xdmhkmkbyw75.cloudfront.net/exercise/317_thumb.jpg",
+        "is_user_uploaded": false
+      },
+      "compendium_code": 12050,
+      "name": "running",
+      "description": null,
+      "benefits": null
+    }
+  ]
+}
+{

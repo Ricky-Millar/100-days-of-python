@@ -1,0 +1,245 @@
+"use strict";
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"]; if (_i == null) return; var _arr = []; var _n = true; var _d = false; var _s, _e; try { for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+app.setPages(_appPages);
+var colorScheme = localStorage.getItem("color-scheme");
+if (colorScheme) document.querySelector("html").classList.add(colorScheme);
+app.on("ga", function (page) {
+  if (typeof ga !== "undefined") {
+    ga("set", "page", "/" + page);
+    ga("send", "pageview");
+  }
+});
+window.addEventListener("scroll", function () {
+  var sctop = this.scrollTop ? this.scrollTop : window.scrollY;
+
+  if (!this.classList.contains("scroll-below-header") && sctop > 80) {
+    this.classList.toggle("scroll-below-header", true);
+    this.classList.toggle("max-view", true);
+  } else if (this.classList.contains("scroll-below-header") && sctop <= 80) {
+    this.classList.toggle("scroll-below-header", false);
+
+    if (!app.routed.map) {
+      this.classList.toggle("max-view", false);
+    }
+  }
+}.bind(document.body));
+document.getElementById("scrollwrapper").addEventListener("scroll", function (e) {
+  app.trigger("mainscroll", e.target.scrollTop);
+});
+app.version.v = window.version;
+$mn.on("layer/change", function () {
+  return app.trigger("dataset/change");
+});
+
+(function () {
+  var timeout;
+  var interval = 150;
+  setTimeout(function () {
+    $mn.on("bounds/changed", function (m) {
+      clearTimeout(timeout);
+      timeout = setTimeout(function () {
+        var h = location.hash;
+        var p = location.pathname;
+        h = h.substr(1).split("/");
+        h = h.filter(function (a) {
+          return a[0] != "@";
+        });
+        var z = $mn.isMap().getZoom();
+        var c = $mn.isMap().getCenter();
+        h.push("@".concat(String(c.lng()).substr(0, 9), ",").concat(String(c.lat()).substr(0, 9), ",").concat(z));
+        history.replaceState(history.state, null, p + "#" + h.join("/"));
+      }, interval);
+    });
+  }, 1000);
+})();
+
+app.on("route", function () {
+  return app.trigger("dataset/change");
+});
+riot.mount("header-main");
+app.tags.main = riot.mount("section-main")[0];
+app.tags.footer = riot.mount("footer-main")[0];
+app.tags.logo = riot.mount("header-top")[0];
+app.tags.alert = riot.mount("alert")[0];
+app.tags.updatebar = riot.mount("update-bar")[0];
+app.tags.pushask = riot.mount("push-ask")[0];
+app.tags.bubble = riot.mount("desktop-bubble")[0];
+app.tags.progress = riot.mount("progress-bar")[0];
+
+(function () {
+  var pingponging = false;
+  var pingterval = 1000 * 60 * 2;
+  var pinghandle;
+  var pinghttp;
+
+  var findPulseByApi = function findPulseByApi(api) {
+    var pulses = [];
+    Object.keys(app.pages).forEach(function (key) {
+      pulses = pulses.concat(app.pages[key].nodes.filter(function (a) {
+        return a.apis.indexOf(api) > -1;
+      }));
+    });
+    return pulses;
+  };
+
+  app.on("pingpong", function () {
+    var updtimeout;
+    if (pingponging && pingponging > new Date() - 3 * pingterval) return;
+    pingponging = new Date();
+    if (pinghttp) pinghttp.abort();
+    pinghttp = _lib.ajax.$get("/app/router/ping.php?pong=" + app.lastUpdate, function (res) {
+      pingponging = false;
+
+      var apis = _lib.json(res);
+
+      if (apis === false) {
+        //console.log(res);
+        return;
+      }
+
+      if (app.version.v < apis.ver) {
+        if (!app.version.refreshNeeded || apis.now > app.version.refreshNeeded + 60 * 5) {
+          app.version.refreshNeeded = apis.now;
+          app.alert.set("reload");
+        }
+      }
+
+      app.lastUpdate = apis.now;
+      apis.list = apis.list.reduce(function (a, b) {
+        if (!a.some(function (c) {
+          return c.api == b.api;
+        })) a.push(b);
+        return a;
+      }, []);
+      apis.list.forEach(function (item) {
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+
+          if (key.indexOf(item.api) >= 0) {
+            localStorage.removeItem(key);
+          }
+        }
+
+        var pulsesToClear = findPulseByApi(item.api);
+        pulsesToClear.forEach(function (a) {
+          for (var _i = 0; _i < localStorage.length; _i++) {
+            var _key = localStorage.key(_i);
+
+            if (_key.indexOf(a.name) >= 0) {
+              localStorage.removeItem(_key);
+            }
+          }
+        });
+
+        _lib.ajax.$get("/app/router/updated.php?name=" + item.api, function (res) {
+          var data = _lib.json(res);
+
+          if (data === false) {
+            //console.log(res);
+            return;
+          }
+
+          var update = false;
+          Object.keys(app.pages).forEach(function (key) {
+            app.pages[key].nodes = app.pages[key].nodes.map(function (node) {
+              var fdata = data.filter(function (d) {
+                if (node.name == d.name) {
+                  update = update || key == app.page;
+                  return true;
+                } else {
+                  return false;
+                }
+              });
+
+              if (fdata.length > 0) {
+                return app.extend(node, fdata[0]);
+              } else {
+                return node;
+              }
+            });
+          });
+
+          if (update) {
+            clearTimeout(updtimeout);
+            updtimeout = setTimeout(function () {
+              riot.update();
+            }, 100);
+          }
+        });
+      });
+    });
+  });
+  app.on("resetping", function () {
+    app.trigger("pingpong", pingterval);
+    clearInterval(pinghandle);
+    pinghandle = setInterval(function () {
+      app.trigger("pingpong", pingterval);
+    }, pingterval);
+  });
+  pinghandle = setInterval(function () {
+    app.trigger("pingpong", pingterval);
+  }, pingterval);
+})();
+
+route.base(window.config.hashbang);
+route.parser(function (path) {
+  return path.split(/[/?#]/);
+}, function (fullpath, filter) {
+  var path, query;
+  var extra = false;
+
+  if (window.config.hashbang == "#") {
+    path = fullpath;
+  } else {
+    var _fullpath$split = fullpath.split("#");
+
+    var _fullpath$split2 = _slicedToArray(_fullpath$split, 2);
+
+    path = _fullpath$split2[0];
+    extra = _fullpath$split2[1];
+  }
+
+  var _path$split = path.split("?");
+
+  var _path$split2 = _slicedToArray(_path$split, 2);
+
+  path = _path$split2[0];
+  query = _path$split2[1];
+
+  if (path[path.length - 1] == "/") {
+    path = path.substr(0, path.length - 1);
+  }
+
+  var f = filter.replace(/\?/g, '\\?').replace(/\*/g, '([^/?#]+?)').replace(/\.\./, '.*');
+  var re = new RegExp("^" + f + "$");
+  var args = path.match(re);
+
+  if (args) {
+    args = args.slice(1);
+
+    if (extra && extra > "") {
+      args.push(extra);
+    }
+
+    return args;
+  }
+});
+route.exec();
+setTimeout(function () {
+  document.getElementById("splash").style.top = '100vh';
+  setTimeout(function () {
+    document.getElementById("splash").style.display = 'none';
+  }, 500);
+}, 1000);

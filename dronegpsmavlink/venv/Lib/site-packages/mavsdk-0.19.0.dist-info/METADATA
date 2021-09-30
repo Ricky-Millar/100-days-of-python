@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: mavsdk
+Version: 0.19.0
+Summary: Python wrapper for MAVSDK
+Home-page: https://github.com/mavlink/MAVSDK-Python
+Maintainer: Jonas Vautherin, Julian Oes
+Maintainer-email: jonas@auterion.com, julian.oes@auterion.com
+License: UNKNOWN
+Project-URL: Bug Reports, https://github.com/mavlink/MAVSDK-Python/issues
+Project-URL: Source, https://github.com/mavlink/MAVSDK-Python/
+Requires-Dist: protobuf (>=3.13.0)
+Requires-Dist: aiogrpc (>=1.5)
+Requires-Dist: grpcio (>=1.11.0)
+Requires-Dist: importlib-resources (>=1.0.2) ; python_version < "3.7"
+
+# MAVSDK-Python
+
+

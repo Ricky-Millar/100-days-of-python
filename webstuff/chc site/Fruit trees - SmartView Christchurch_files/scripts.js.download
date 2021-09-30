@@ -1,0 +1,4527 @@
+"use strict";
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var _lib = {
+  preventScroll: false,
+  ajaxCalls: {},
+  flattenDeep: function flattenDeep(arr1) {
+    return arr1.reduce(function (acc, val) {
+      if (Array.isArray(val)) {
+        return acc.concat(_lib.flattenDeep(val));
+      } else if (val.getArray) {
+        return acc.concat(_lib.flattenDeep(val.getArray()));
+      } else {
+        return acc.concat(val);
+      }
+    }, []);
+  },
+  slugify: function slugify(text) {
+    return text.toString().toLowerCase().replace(/\s+/g, '-') // Replace spaces with -
+    .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+    .replace(/\-\-+/g, '-') // Replace multiple - with single -
+    .replace(/^-+/, '') // Trim - from start of text
+    .replace(/-+$/, ''); // Trim - from end of text
+  },
+  truncate: function truncate(str, len) {
+    if (str.length > len) str = str.substring(0, len) + "&hellip;";
+    return str;
+  },
+  singlefy: function singlefy(str) {
+    if (str[str.length - 1] == "s") {
+      return str.substring(0, str.length - 1);
+    } else {
+      return str;
+    }
+  },
+  hexToRgb: function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      red: parseInt(result[1], 16),
+      green: parseInt(result[2], 16),
+      blue: parseInt(result[3], 16)
+    } : null;
+  },
+  colorGradientArray: function colorGradientArray(fade, colors) {
+    var _this = this;
+
+    fade = fade * (colors.length - 1);
+    colors.forEach(function (a, i) {
+      if (typeof a == "string") {
+        colors[i] = _this.hexToRgb(a);
+      }
+    });
+    return this.colorGradient(fade - Math.floor(fade), colors[Math.floor(fade)], colors[Math.ceil(fade)]);
+  },
+  colorGradient: function colorGradient(fadeFraction, rgbColor1, rgbColor2, rgbColor3) {
+    var color1 = rgbColor1;
+    var color2 = rgbColor2;
+    var fade = fadeFraction; // Do we have 3 colors for the gradient? Need to adjust the params.
+
+    if (rgbColor3) {
+      fade = fade * 2; // Find which interval to use and adjust the fade percentage
+
+      if (fade >= 1) {
+        fade -= 1;
+        color1 = rgbColor2;
+        color2 = rgbColor3;
+      }
+    }
+
+    var diffRed = color2.red - color1.red;
+    var diffGreen = color2.green - color1.green;
+    var diffBlue = color2.blue - color1.blue;
+    var gradient = {
+      red: parseInt(Math.floor(color1.red + diffRed * fade), 10),
+      green: parseInt(Math.floor(color1.green + diffGreen * fade), 10),
+      blue: parseInt(Math.floor(color1.blue + diffBlue * fade), 10)
+    };
+    return gradient; //'rgb(' + gradient.red + ',' + gradient.green + ',' + gradient.blue + ')';
+  },
+  saveAsJson: function saveAsJson(obj, fileName) {
+    saveAs(new Blob([JSON.stringify(obj)]), fileName);
+  },
+  keep: function () {
+    var store = function store(name, what, where, obj) {
+      var data = app.extend(obj, {
+        data: what
+      });
+      var exp = JSON.stringify(data);
+
+      try {
+        window[where].setItem(name, exp);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    var get = function get(name, where) {
+      var data = window[where].getItem(name);
+      data = JSON.parse(data);
+
+      if (data && data.expire && new Date(data.expire) < new Date()) {
+        data = {
+          data: null
+        };
+      }
+
+      return data ? data.data : data;
+    };
+
+    var main = function main(name, what, obj) {
+      return store(name, what, "localStorage", obj);
+    };
+
+    main.need = function (name) {
+      return get(name, "localStorage");
+    };
+
+    main.session = function (name, what) {
+      return store(name, what, "sessionStorage");
+    };
+
+    main.session.need = function (name) {
+      return get(name, "sessionStorage");
+    };
+
+    main.expire = function (name, what, when) {
+      if (typeof when == "undefined") when = "1 days";
+      var p = when.split(" ");
+      var expire = moment().add(p[0], p[1]).toDate();
+      main(name, what, {
+        expire: expire
+      });
+    };
+
+    return main;
+  }(),
+  dom: {
+    once: function once(node, type, fce) {
+      var wrapper = function wrapper() {
+        node.removeEventListener(type, wrapper, false);
+        fce();
+      };
+
+      node.addEventListener(type, wrapper);
+    },
+    remove: function remove(node) {
+      node.parentNode.removeChild(node);
+    },
+    "new": function () {
+      var main = function main(ele) {
+        var obj;
+
+        if (ele.tag) {
+          if (ele.exists && (ele.append || ele.replace)) {
+            var parent = ele.append ? ele.append : ele.replace;
+            obj = parent.querySelector(ele.exists);
+          }
+
+          if (!obj) {
+            obj = document.createElement(ele.tag);
+          }
+
+          for (var i in ele) {
+            if (ele.hasOwnProperty(i)) {
+              switch (i) {
+                case 'style':
+                  var data = ele[i];
+
+                  for (var j in data) {
+                    obj.style[j] = data[j];
+                  }
+
+                  break;
+
+                case 'name':
+                  obj.name = ele[i];
+                  break;
+
+                case 'type':
+                  obj.type = ele[i];
+                  break;
+
+                case 'title':
+                  obj.title = ele[i];
+                  break;
+
+                case 'value':
+                  obj.value = ele[i];
+                  break;
+
+                case 'src':
+                  obj.src = ele[i];
+                  break;
+
+                case 'cls':
+                  obj.className = ele[i];
+                  break;
+
+                case 'html':
+                  obj.innerHTML = ele[i];
+                  break;
+
+                case 'text':
+                  if (obj.childNodes.length > 0) {
+                    obj.innerHTML = ele[i];
+                  } else {
+                    obj.appendChild(document.createTextNode(ele[i]));
+                  }
+
+                  break;
+
+                case 'data':
+                  var data = ele[i];
+
+                  for (var j in data) {
+                    obj.dataset[j] = data[j];
+                  }
+
+                  break;
+
+                case 'nodes':
+                  var nodes = ele[i];
+
+                  for (var j in nodes) {
+                    if (nodes[j].clear) {
+                      obj.innerHTML = "";
+                    } else {
+                      obj.appendChild(_lib.dom["new"](nodes[j]));
+                    }
+                  }
+
+                  break;
+
+                case 'id':
+                  obj.id = ele[i];
+                  break;
+
+                case 'click':
+                  obj.addEventListener("click", ele[i]);
+                  break;
+
+                case 'change':
+                  obj.addEventListener("change", ele[i]);
+                  break;
+
+                case 'checked':
+                  obj.checked = ele[i];
+
+                case 'draggable':
+                  obj.draggable = ele[i];
+              }
+            }
+          }
+        } else {
+          obj = document.createTextNode(ele.text);
+        }
+
+        if (!obj.parentNode || !ele.exists) {
+          if (ele.replace) {
+            ele.replace.innerHTML = "";
+            ele.append = ele.replace;
+          }
+
+          if (ele.append) {
+            ele.append.appendChild(obj);
+          }
+
+          if (ele.prepend) {
+            if (ele.prepend.childNodes.length > 0) {
+              ele.prepend.insertBefore(obj, ele.prepend.childNodes[0]);
+            } else {
+              ele.prepend.appendChild(obj);
+            }
+          }
+        }
+
+        return obj;
+      };
+
+      main.table = function (ele) {
+        ele.tag = "table";
+        ele.nodes = [];
+
+        for (var i in ele.rows) {
+          ele.rows[i].tag = "tr";
+          ele.rows[i].nodes = [];
+
+          for (var j in ele.rows[i].cells) {
+            ele.rows[i].cells[j].tag = "td";
+            ele.rows[i].nodes.push(ele.rows[i].cells[j]);
+          }
+
+          ele.nodes.push(ele.rows[i]);
+        }
+
+        return main(ele);
+      };
+
+      return main;
+    }()
+  },
+  json: function json(str) {
+    try {
+      var x = JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+
+    return x;
+  },
+  getPosition: function getPosition(el, parent) {
+    var xPos = 0;
+    var yPos = 0; //
+
+    while (el) {
+      if (el.tagName == "BODY") {
+        // deal with browser quirks with body/window/document and page scroll
+        var xScroll = el.scrollLeft || document.documentElement.scrollLeft;
+        var yScroll = el.scrollTop || document.documentElement.scrollTop;
+        xPos += el.offsetLeft - xScroll + el.clientLeft;
+        yPos += el.offsetTop - yScroll + el.clientTop;
+      } else {
+        // for all other non-BODY elements
+        xPos += el.offsetLeft - el.scrollLeft + el.clientLeft;
+        yPos += el.offsetTop - el.scrollTop + el.clientTop;
+      }
+
+      el = el.offsetParent;
+
+      if (el == parent) {
+        break;
+      }
+    }
+
+    return {
+      x: xPos,
+      y: yPos
+    };
+  },
+  dateInputValue: function dateInputValue(when) {
+    var local = new Date(when);
+    local.setMinutes(when.getMinutes() - when.getTimezoneOffset());
+    return local.toJSON().slice(0, 10);
+  },
+  dataToJSON: function dataToJSON(ele) {
+    var x = [];
+
+    for (var i in ele.dataset) {
+      x.push({
+        name: i,
+        value: ele.dataset[i]
+      });
+    }
+
+    return x;
+  },
+  featToJSON: function featToJSON(feat) {
+    var x = [];
+    feat.forEachProperty(function (a, b) {
+      x.push({
+        name: b,
+        value: a
+      });
+    });
+    return x;
+  },
+  isList: function isList(obj) {
+    return obj instanceof Array || obj instanceof NodeList || obj instanceof HTMLCollection;
+  },
+  radio: {
+    stations: {},
+    addListen: function addListen(station, obj, event, listener) {
+      if (!this.isListening(station, obj)) {
+        obj.addEventListener(event, listener);
+        this.stations[station].push(obj);
+      }
+    },
+    listen: function listen(station, obj, event, listener) {
+      if (!this.stations.hasOwnProperty(station)) this.stations[station] = [];
+
+      if (_lib.isList(obj)) {
+        for (var i = 0, n = obj.length; i < n; i++) {
+          this.addListen(station, obj[i], event, listener);
+        }
+      } else {
+        this.addListen(station, obj, event, listener);
+      }
+    },
+    isListening: function isListening(station, obj) {
+      if (this.stations[station]) {
+        var st = this.stations[station];
+
+        for (var i = 0, n = st.length; i < n; i++) {
+          if (st[i] === obj) return true;
+        }
+      }
+    }
+  },
+  newEvent: function newEvent(name) {
+    var e = document.createEvent('Event');
+    e.initEvent(name, true, true);
+    return e;
+  },
+  getGeo: function getGeo(callback) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function (position) {
+        var pos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        if (app) app.lastPosition = pos;
+        callback(pos);
+      }, function (err) {
+        console.log(err);
+        callback({
+          err: err
+        });
+      }, {
+        maximumAge: 1000,
+        enableHighAccuracy: true
+      });
+    } else {// handleLocationError(false, infoWindow, map.getCenter());
+    }
+  },
+  ajax: function () {
+    var x = function x(method, url, data, callback, type, singleToken, cors, finishedcb) {
+      type = type || "plain";
+      singleToken = singleToken || false;
+      finishedcb = finishedcb || false;
+      var http = new XMLHttpRequest();
+
+      if (singleToken !== false) {
+        if (_typeof(this.ajaxCalls[singleToken]) === "object") {
+          this.ajaxCalls[singleToken].abort();
+          delete this.ajaxCalls[singleToken];
+        }
+
+        this.ajaxCalls[singleToken] = http;
+      }
+
+      http.open(method, url, true);
+      var headers = {
+        "form": "application/x-form-urlencoded",
+        "plain": "text/plain",
+        "json": "application/json"
+      };
+      http.setRequestHeader("content-type", headers[type]);
+
+      if (cors) {
+        http.setRequestHeader('Access-Control-Allow-Origin', '*');
+      }
+
+      http.onreadystatechange = function () {
+        //if (singleToken===false) console.log("Status: "+http.status + " State: "+ http.readyState + "\n  "+http.responseText);
+        if (http.status === 200 && http.readyState === 4) {
+          callback(http.responseText);
+          if (finishedcb) finishedcb(http);
+        } else if (http.readyState === 4) {
+          if (singleToken !== false) {
+            delete _lib.ajaxCalls[singleToken];
+          }
+
+          if (finishedcb) finishedcb(http);
+        }
+      };
+
+      http.send(data);
+      if (app.log) app.log.info("AJAX", {
+        method: method,
+        url: url
+      });
+      return http;
+    };
+
+    x.$get = function (url, callback, finished) {
+      var singleToken = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+      return _lib.ajax("get", url, null, callback, false, singleToken, false, finished);
+    };
+
+    x.$json = function (url, data, callback) {
+      return _lib.ajax("post", url, JSON.stringify(data), callback);
+    };
+
+    return x;
+  }(),
+  isVisible: function isVisible(e) {
+    return !!(e.offsetWidth || e.offsetHeight || e.getClientRects().length);
+  },
+  isDisplayed: function isDisplayed(e) {
+    var elementShown = function elementShown(e) {
+      if (e == document) return true;
+      if (getComputedStyle(e).display == 'none') return false;
+      return elementShown(e.parentNode);
+    };
+
+    return elementShown(e);
+  },
+  findParent: function findParent(self, selector, search) {
+    var parent = self;
+    var found = false;
+
+    do {
+      parent = parent.parentNode;
+      if (parent) switch (selector) {
+        case 'class':
+          if (parent.classList && parent.classList.contains) found = parent.classList.contains(search);
+          break;
+
+        case 'id':
+          found = parent.id === search;
+          break;
+      }
+    } while (parent && !found);
+
+    return found ? parent : false;
+  },
+  nextEle: function nextEle(self) {
+    var next = self.nextSibling;
+
+    while (next && next.nodeType !== 1) {
+      next = next.nextSibling;
+    }
+
+    return next.nodeType === 1 ? next : null;
+  },
+  prevEle: function prevEle(self) {
+    var prev = self.previousSibling;
+
+    while (prev && prev.nodeType !== 1) {
+      prev = prev.previousSibling;
+    }
+
+    return prev.nodeType === 1 ? prev : null;
+  },
+  getChildEle: function getChildEle(self) {
+    var eles = [];
+
+    if (self) {
+      var nodes = self.childNodes;
+
+      for (var i = 0, n = nodes.length; i < n; i++) {
+        if (nodes[i].nodeType === 1) {
+          eles.push(nodes[i]);
+        }
+      }
+    }
+
+    return eles;
+  },
+  animateScroll: function animateScroll(self, dir, amount, time, preventScroll) {
+    preventScroll = preventScroll || false;
+    time = time || 300;
+    var start = 0,
+        actual = 0;
+
+    switch (dir) {
+      case 'horizontal':
+        start = self.scrollLeft;
+        break;
+
+      case 'vertical':
+        start = self.scrollTop;
+        break;
+    }
+
+    var ms = 1; //Math.ceil(time / Math.abs(start - amount));
+
+    var jump = Math.round((Math.abs(amount) - start) / (time / ms)) * (amount < 0 ? -1 : 1);
+    var timeToComplete = time;
+
+    if (self._lib) {
+      clearInterval(self._lib.interval);
+    } else {
+      self._lib = {};
+    }
+
+    self._lib.interval = setInterval(function () {
+      _lib.preventScroll = preventScroll;
+      timeToComplete -= ms;
+
+      if (timeToComplete <= 0) {
+        clearInterval(self._lib.interval);
+
+        switch (dir) {
+          case 'horizontal':
+            self.scrollLeft = amount;
+            break;
+
+          case 'vertical':
+            self.scrollTop = amount;
+            break;
+        }
+      } else {
+        switch (dir) {
+          case 'horizontal':
+            actual = self.scrollLeft += jump;
+            break;
+
+          case 'vertical':
+            actual = self.scrollTop += jump;
+            break;
+        }
+      }
+
+      jump = Math.round((Math.abs(amount) - actual) / (timeToComplete / ms)) * (amount < 0 ? -1 : 1);
+    }, ms);
+  },
+  setArrayClass: function setArrayClass(eles, className, action) {
+    for (var i = 0, n = eles.length; i < n; i++) {
+      if (eles[i].nodeType === 1) {
+        switch (action) {
+          case 'add':
+            eles[i].classList.add(className);
+            break;
+
+          case 'remove':
+            eles[i].classList.remove(className);
+            break;
+
+          case 'toggle':
+            eles[i].classList.toggle(className);
+            break;
+        }
+      }
+    }
+  },
+  observeDOM: function () {
+    var MutationObserver = window.MutationObserer || window.WebKitMutationObserver;
+    return function (obj, callback) {
+      if (MutationObserver) {
+        var obs = new MutationObserver(function (mutations) {
+          if (mutations[0].addedNodes.length || mutations[0].removedNodes.length) {
+            callback();
+          }
+        });
+
+        if (obj instanceof Array || obj instanceof NodeList || obj instanceof HTMLCollection) {
+          for (var i = 0, n = obj.length; i < n; i++) {
+            obs.observe(obj[i], {
+              childList: true,
+              subtree: true
+            });
+          }
+        } else {
+          obs.observe(obj, {
+            childList: true,
+            subtree: true
+          });
+        }
+      } else {
+        if (obj instanceof Array || obj instanceof NodeList || obj instanceof HTMLCollection) {
+          for (var i = 0, n = obj.length; i < n; i++) {
+            obj[i].addEventListener('DOMNodeInserted', callback, false);
+            obj[i].addEventListener('DOMNodeRemoved', callback, false);
+          }
+        } else {
+          obj.addEventListener('DOMNodeInserted', callback, false);
+          obj.addEventListener('DOMNodeRemoved', callback, false);
+        }
+      }
+    };
+  }(),
+  getOffsetTop: function getOffsetTop(ele) {
+    var top = 0;
+
+    if (ele.offsetTop) {
+      top += ele.offsetTop;
+
+      if (ele.tagName != "BODY" && ele.offsetParent) {
+        var parentTop = _lib.getOffsetTop(ele.offsetParent);
+
+        top += parentTop;
+      }
+    }
+
+    return top;
+  },
+  isMobile: function isMobile() {
+    return !window.matchMedia("(min-width: 765px)").matches;
+  },
+  isSmallDesktop: function isSmallDesktop() {
+    return !window.matchMedia("(min-width: 1025px)").matches;
+  },
+  isSmallerDesktop: function isSmallerDesktop() {
+    return !window.matchMedia("(min-width: 975px)").matches;
+  },
+  scrollByMouse: function scrollByMouse(ele) {
+    var curYPos, curXPos, curDown;
+    var startSY, startSX;
+    var moved = false; //        var ele = document.querySelector(".play #myDiv");
+
+    var fmove = function fmove(e) {
+      if (curDown) {
+        var x, y;
+
+        if (!e.pageX) {
+          x = e.touches[0].pageX;
+          y = e.touches[0].pageY;
+        } else {
+          x = e.pageY;
+          y = e.pageX;
+        } //                console.log(curXPos, e.pageX, ele.scrollLeft);
+
+
+        ele.scrollLeft = startSX + (curXPos - x); //ele.scrollLeft + 
+        //                ele.scrollTop = startSY + (curYPos - e.pageY); //ele.scrollTop + 
+
+        moved = true;
+      }
+    };
+
+    var fdown = function fdown(e) {
+      if (!e.pageX) {
+        curXPos = e.touches[0].pageX;
+        curYPos = e.touches[0].pageY;
+      } else {
+        curYPos = e.pageY;
+        curXPos = e.pageX;
+      }
+
+      startSY = ele.scrollTop;
+      startSX = ele.scrollLeft;
+      curDown = true;
+    };
+
+    var fup = function fup(e) {
+      if (moved) {
+        e.stopPropagation();
+        e.preventDefault();
+        curDown = false;
+        moved = false;
+      }
+    };
+
+    var wup = function wup(e) {
+      curDown = false;
+      moved = false;
+    };
+
+    ele.addEventListener('mousemove', fmove);
+    ele.addEventListener('touchmove', fmove);
+    ele.addEventListener('mousedown', fdown);
+    ele.addEventListener('touchstart', fdown);
+    ele.addEventListener('mouseup', fup);
+    ele.addEventListener('touchend', fup);
+    window.addEventListener('mouseup', wup);
+    window.addEventListener('touchend', wup);
+  },
+  Events: function () {
+    var cache = {},
+
+    /**
+     *	Events.publish
+     *	e.g.: Events.publish("/Article/added", [article], this);
+     *
+     *	@class Events
+     *	@method publish
+     *	@param topic {String}
+     *	@param args	{Array}
+     *	@param scope {Object} Optional
+     */
+    publish = function publish(topic, args, scope) {
+      if (cache[topic]) {
+        var thisTopic = cache[topic],
+            i = thisTopic.length - 1;
+
+        for (i; i >= 0; i -= 1) {
+          thisTopic[i].apply(scope || this, args || []);
+        }
+      }
+    },
+
+    /**
+     *	Events.subscribe
+     *	e.g.: Events.subscribe("/Article/added", Articles.validate)
+     *
+     *	@class Events
+     *	@method subscribe
+     *	@param topic {String}
+     *	@param callback {Function}
+     *	@return Event handler {Array}
+     */
+    subscribe = function subscribe(topic, callback) {
+      if (!cache[topic]) {
+        cache[topic] = [];
+      }
+
+      cache[topic].push(callback);
+      return [topic, callback];
+    },
+
+    /**
+     *	Events.unsubscribe
+     *	e.g.: var handle = Events.subscribe("/Article/added", Articles.validate);
+     *		Events.unsubscribe(handle);
+     *
+     *	@class Events
+     *	@method unsubscribe
+     *	@param handle {Array}
+     *	@param completly {Boolean}
+     *	@return {type description }
+     */
+    unsubscribe = function unsubscribe(handle, completly) {
+      var t = handle[0],
+          i = cache[t].length - 1;
+
+      if (cache[t]) {
+        for (i; i >= 0; i -= 1) {
+          if (cache[t][i] === handle[1]) {
+            cache[t].splice(cache[t][i], 1);
+
+            if (completly) {
+              delete cache[t];
+            }
+          }
+        }
+      }
+    };
+
+    return {
+      publish: publish,
+      subscribe: subscribe,
+      unsubscribe: unsubscribe
+    };
+  }(),
+  Geohash: {
+    /* (Geohash-specific) Base32 map */
+    base32: '0123456789bcdefghjkmnpqrstuvwxyz',
+
+    /**
+     * Encodes latitude/longitude to geohash, either to specified precision or to automatically
+     * evaluated precision.
+     *
+     * @param   {number} lat - Latitude in degrees.
+     * @param   {number} lon - Longitude in degrees.
+     * @param   {number} [precision] - Number of characters in resulting geohash.
+     * @returns {string} Geohash of supplied latitude/longitude.
+     * @throws  Invalid geohash.
+     *
+     * @example
+     *     var geohash = Geohash.encode(52.205, 0.119, 7); // geohash: 'u120fxw'
+     */
+    encode: function encode(lat, lon, precision) {
+      // infer precision?
+      if (typeof precision == 'undefined') {
+        // refine geohash until it matches precision of supplied lat/lon
+        for (var p = 1; p <= 12; p++) {
+          var hash = this.encode(lat, lon, p);
+          var posn = this.decode(hash);
+          if (posn.lat == lat && posn.lon == lon) return hash;
+        }
+
+        precision = 12; // set to maximum
+      }
+
+      lat = Number(lat);
+      lon = Number(lon);
+      precision = Number(precision);
+      if (isNaN(lat) || isNaN(lon) || isNaN(precision)) throw new Error('Invalid geohash');
+      var idx = 0; // index into base32 map
+
+      var bit = 0; // each char holds 5 bits
+
+      var evenBit = true;
+      var geohash = '';
+      var latMin = -90,
+          latMax = 90;
+      var lonMin = -180,
+          lonMax = 180;
+
+      while (geohash.length < precision) {
+        if (evenBit) {
+          // bisect E-W longitude
+          var lonMid = (lonMin + lonMax) / 2;
+
+          if (lon >= lonMid) {
+            idx = idx * 2 + 1;
+            lonMin = lonMid;
+          } else {
+            idx = idx * 2;
+            lonMax = lonMid;
+          }
+        } else {
+          // bisect N-S latitude
+          var latMid = (latMin + latMax) / 2;
+
+          if (lat >= latMid) {
+            idx = idx * 2 + 1;
+            latMin = latMid;
+          } else {
+            idx = idx * 2;
+            latMax = latMid;
+          }
+        }
+
+        evenBit = !evenBit;
+
+        if (++bit == 5) {
+          // 5 bits gives us a character: append it and start over
+          geohash += this.base32.charAt(idx);
+          bit = 0;
+          idx = 0;
+        }
+      }
+
+      return geohash;
+    },
+
+    /**
+     * Decode geohash to latitude/longitude (location is approximate centre of geohash cell,
+     *     to reasonable precision).
+     *
+     * @param   {string} geohash - this string to be converted to latitude/longitude.
+     * @returns {{lat:number, lon:number}} (Center of) geohashed location.
+     * @throws  Invalid geohash.
+     *
+     * @example
+     *     var latlon = this.decode('u120fxw'); // latlon: { lat: 52.205, lon: 0.1188 }
+     */
+    decode: function decode(geohash) {
+      var bounds = this.bounds(geohash); // <-- the hard work
+      // now just determine the centre of the cell...
+
+      var latMin = bounds.sw.lat,
+          lonMin = bounds.sw.lon;
+      var latMax = bounds.ne.lat,
+          lonMax = bounds.ne.lon; // cell centre
+
+      var lat = (latMin + latMax) / 2;
+      var lon = (lonMin + lonMax) / 2; // round to close to centre without excessive precision: ⌊2-log10(Δ°)⌋ decimal places
+
+      lat = lat.toFixed(Math.floor(2 - Math.log(latMax - latMin) / Math.LN10));
+      lon = lon.toFixed(Math.floor(2 - Math.log(lonMax - lonMin) / Math.LN10));
+      return {
+        lat: Number(lat),
+        lon: Number(lon)
+      };
+    },
+
+    /**
+     * Returns SW/NE latitude/longitude bounds of specified geohash.
+     *
+     * @param   {string} geohash - Cell that bounds are required of.
+     * @returns {{sw: {lat: number, lon: number}, ne: {lat: number, lon: number}}}
+     * @throws  Invalid geohash.
+     */
+    bounds: function bounds(geohash) {
+      if (geohash.length === 0) throw new Error('Invalid geohash');
+      geohash = geohash.toLowerCase();
+      var evenBit = true;
+      var latMin = -90,
+          latMax = 90;
+      var lonMin = -180,
+          lonMax = 180;
+
+      for (var i = 0; i < geohash.length; i++) {
+        var chr = geohash.charAt(i);
+        var idx = this.base32.indexOf(chr);
+        if (idx == -1) throw new Error('Invalid geohash');
+
+        for (var n = 4; n >= 0; n--) {
+          var bitN = idx >> n & 1;
+
+          if (evenBit) {
+            // longitude
+            var lonMid = (lonMin + lonMax) / 2;
+
+            if (bitN == 1) {
+              lonMin = lonMid;
+            } else {
+              lonMax = lonMid;
+            }
+          } else {
+            // latitude
+            var latMid = (latMin + latMax) / 2;
+
+            if (bitN == 1) {
+              latMin = latMid;
+            } else {
+              latMax = latMid;
+            }
+          }
+
+          evenBit = !evenBit;
+        }
+      }
+
+      var bounds = {
+        sw: {
+          lat: latMin,
+          lon: lonMin
+        },
+        ne: {
+          lat: latMax,
+          lon: lonMax
+        }
+      };
+      return bounds;
+    },
+
+    /**
+     * Determines adjacent cell in given direction.
+     *
+     * @param   geohash - Cell to which adjacent cell is required.
+     * @param   direction - Direction from geohash (N/S/E/W).
+     * @returns {string} Geocode of adjacent cell.
+     * @throws  Invalid geohash.
+     */
+    adjacent: function adjacent(geohash, direction) {
+      // based on github.com/davetroy/geohash-js
+      geohash = geohash.toLowerCase();
+      direction = direction.toLowerCase();
+      if (geohash.length === 0) throw new Error('Invalid geohash');
+      if ('nsew'.indexOf(direction) == -1) throw new Error('Invalid direction');
+      var neighbour = {
+        n: ['p0r21436x8zb9dcf5h7kjnmqesgutwvy', 'bc01fg45238967deuvhjyznpkmstqrwx'],
+        s: ['14365h7k9dcfesgujnmqp0r2twvyx8zb', '238967debc01fg45kmstqrwxuvhjyznp'],
+        e: ['bc01fg45238967deuvhjyznpkmstqrwx', 'p0r21436x8zb9dcf5h7kjnmqesgutwvy'],
+        w: ['238967debc01fg45kmstqrwxuvhjyznp', '14365h7k9dcfesgujnmqp0r2twvyx8zb']
+      };
+      var border = {
+        n: ['prxz', 'bcfguvyz'],
+        s: ['028b', '0145hjnp'],
+        e: ['bcfguvyz', 'prxz'],
+        w: ['0145hjnp', '028b']
+      };
+      var lastCh = geohash.slice(-1); // last character of hash
+
+      var parent = geohash.slice(0, -1); // hash without last character
+
+      var type = geohash.length % 2; // check for edge-cases which don't share common prefix
+
+      if (border[direction][type].indexOf(lastCh) != -1 && parent !== '') {
+        parent = this.adjacent(parent, direction);
+      } // append letter for direction to parent
+
+
+      return parent + this.base32.charAt(neighbour[direction][type].indexOf(lastCh));
+    },
+
+    /**
+     * Returns all 8 adjacent cells to specified geohash.
+     *
+     * @param   {string} geohash - this neighbours are required of.
+     * @returns {{n,ne,e,se,s,sw,w,nw: string}}
+     * @throws  Invalid geohash.
+     */
+    neighbours: function neighbours(geohash) {
+      return {
+        'n': this.adjacent(geohash, 'n'),
+        'ne': this.adjacent(this.adjacent(geohash, 'n'), 'e'),
+        'e': this.adjacent(geohash, 'e'),
+        'se': this.adjacent(this.adjacent(geohash, 's'), 'e'),
+        's': this.adjacent(geohash, 's'),
+        'sw': this.adjacent(this.adjacent(geohash, 's'), 'w'),
+        'w': this.adjacent(geohash, 'w'),
+        'nw': this.adjacent(this.adjacent(geohash, 'n'), 'w')
+      };
+    }
+  }
+};
+var _maps = {
+  ready: false,
+  mapsEle: [],
+  maps: [],
+  mapsById: {},
+  markers: {},
+  mapFeatures: {},
+  trafficLayer: null,
+  directionsService: null,
+  latlng2Scalar: function latlng2Scalar(obj) {
+    return {
+      lat: obj.lat(),
+      lng: obj.lng()
+    };
+  },
+  distance: function distance(lat1, lon1, lat2, lon2) {
+    var radlat1 = Math.PI * lat1 / 180;
+    var radlat2 = Math.PI * lat2 / 180;
+    var theta = lon1 - lon2;
+    var radtheta = Math.PI * theta / 180;
+    var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+    dist = Math.acos(dist);
+    dist = dist * 180 / Math.PI;
+    dist = dist * 60 * 1.853159616;
+    dist = dist * 1000;
+    return dist;
+  },
+  distanceRoundFormat: function distanceRoundFormat(dist) {
+    if (dist > 15000) {
+      dist = Math.round(dist / 1000) + " km";
+    } else if (dist > 999) {
+      dist = Math.round(dist / 100) / 10 + " km";
+    } else if (dist > 99) {
+      dist = Math.round(dist / 10) * 10 + " m";
+    } else {
+      dist = Math.round(dist) + "m";
+    }
+
+    return dist;
+  },
+  PolygonShape: function PolygonShape(point, r1, r2, r3, r4, rotation, vertexCount, strokeColour, strokeWeight, Strokepacity, fillColour, fillOpacity, opts, tilt) {
+    var rot = -rotation * Math.PI / 180;
+    var points = [];
+    var latConv = google.maps.geometry.spherical.computeDistanceBetween(point, new google.maps.LatLng(point.lat() + 0.1, point.lng())) * 10;
+    var lngConv = google.maps.geometry.spherical.computeDistanceBetween(point, new google.maps.LatLng(point.lat(), point.lng() + 0.1)) * 10;
+    var step = 360 / vertexCount || 10;
+    var flop = -1;
+
+    if (tilt) {
+      var I1 = 180 / vertexCount;
+    } else {
+      var I1 = 0;
+    }
+
+    for (var i = I1; i <= 360.001 + I1; i += step) {
+      var r1a = flop ? r1 : r3;
+      var r2a = flop ? r2 : r4;
+      flop = -1 - flop;
+      var y = r1a * Math.cos(i * Math.PI / 180);
+      var x = r2a * Math.sin(i * Math.PI / 180);
+      var lng = (x * Math.cos(rot) - y * Math.sin(rot)) / lngConv;
+      var lat = (y * Math.cos(rot) + x * Math.sin(rot)) / latConv;
+      points.push(new google.maps.LatLng(point.lat() + lat, point.lng() + lng));
+    }
+
+    return new google.maps.Polygon({
+      paths: points,
+      strokeColor: strokeColour,
+      strokeWeight: strokeWeight,
+      strokeOpacity: Strokepacity,
+      fillColor: fillColour,
+      fillOpacity: fillOpacity
+    });
+  },
+  PolygonDataShape: function PolygonDataShape(point, r1, r2, r3, r4, rotation, vertexCount, strokeColour, strokeWeight, Strokepacity, fillColour, fillOpacity, opts, tilt) {
+    var rot = -rotation * Math.PI / 180;
+    var points = [];
+    var latConv = google.maps.geometry.spherical.computeDistanceBetween(point, new google.maps.LatLng(point.lat() + 0.1, point.lng())) * 10;
+    var lngConv = google.maps.geometry.spherical.computeDistanceBetween(point, new google.maps.LatLng(point.lat(), point.lng() + 0.1)) * 10;
+    var step = 360 / vertexCount || 10;
+    var flop = -1;
+
+    if (tilt) {
+      var I1 = 180 / vertexCount;
+    } else {
+      var I1 = 0;
+    }
+
+    for (var i = I1; i <= 360.001 + I1; i += step) {
+      var r1a = flop ? r1 : r3;
+      var r2a = flop ? r2 : r4;
+      flop = -1 - flop;
+      var y = r1a * Math.cos(i * Math.PI / 180);
+      var x = r2a * Math.sin(i * Math.PI / 180);
+      var lng = (x * Math.cos(rot) - y * Math.sin(rot)) / lngConv;
+      var lat = (y * Math.cos(rot) + x * Math.sin(rot)) / latConv;
+      points.push(new google.maps.LatLng(point.lat() + lat, point.lng() + lng));
+    }
+
+    return new google.maps.Data.Polygon([points]);
+  },
+  PolygonRegularPoly: function PolygonRegularPoly(point, radius, vertexCount, rotation, strokeColour, strokeWeight, Strokepacity, fillColour, fillOpacity, opts) {
+    rotation = rotation || 0;
+    var tilt = !(vertexCount & 1);
+    return this.PolygonShape(point, radius, radius, radius, radius, rotation, vertexCount, strokeColour, strokeWeight, Strokepacity, fillColour, fillOpacity, opts, tilt);
+  },
+  PolygonRegularDataPoly: function PolygonRegularDataPoly(point, radius, vertexCount, rotation, strokeColour, strokeWeight, Strokepacity, fillColour, fillOpacity, opts) {
+    rotation = rotation || 0;
+    var tilt = !(vertexCount & 1);
+    return this.PolygonDataShape(point, radius, radius, radius, radius, rotation, vertexCount, strokeColour, strokeWeight, Strokepacity, fillColour, fillOpacity, opts, tilt);
+  },
+  EOffsetBearing: function EOffsetBearing(point, dist, bearing) {
+    var latConv = google.maps.geometry.spherical.computeDistanceBetween(point, new google.maps.LatLng(point.lat() + 0.1, point.lng())) * 10;
+    var lngConv = google.maps.geometry.spherical.computeDistanceBetween(point, new google.maps.LatLng(point.lat(), point.lng() + 0.1)) * 10;
+    var lat = dist * Math.cos(bearing * Math.PI / 180) / latConv;
+    var lng = dist * Math.sin(bearing * Math.PI / 180) / lngConv;
+    return new google.maps.LatLng(point.lat() + lat, point.lng() + lng);
+  },
+  makeTextBox: function makeTextBox(options) {
+    return new _maps.TxtOverlay(options.loc, options.html, options.css, options.map);
+  },
+  MercatorToLatLon: function MercatorToLatLon(mercX, mercY) {
+    var rMajor = 6378137; //Equatorial Radius, WGS84
+
+    var shift = Math.PI * rMajor;
+    var lon = mercX / shift * 180.0;
+    var lat = mercY / shift * 180.0;
+    lat = 180 / Math.PI * (2 * Math.atan(Math.exp(lat * Math.PI / 180.0)) - Math.PI / 2.0);
+    return {
+      Lon: lon,
+      Lat: lat
+    };
+  },
+  extendBoundaries: function extendBoundaries(map, feats) {
+    var bounds = new google.maps.LatLngBounds();
+    feats.forEach(function (item, index) {
+      if (item && item.getGeometry()) {
+        _maps.processPoints(item.getGeometry(), bounds.extend, bounds);
+      } //  bounds.extend(new google.maps.LatLng(item.getGeometry().get().lat(), item.getGeometry().get().lng()));
+
+    });
+    map.fitBounds(bounds);
+  },
+  getCenter: function getCenter(geo) {
+    var bounds = new google.maps.LatLngBounds();
+
+    _maps.processPoints(geo, bounds.extend, bounds); //  bounds.extend(new google.maps.LatLng(item.getGeometry().get().lat(), item.getGeometry().get().lng()));
+
+
+    return bounds.getCenter();
+  },
+  processPoints: function processPoints(geometry, callback, thisArg) {
+    if (geometry) {
+      if (geometry instanceof google.maps.LatLng) {
+        callback.call(thisArg, geometry);
+      } else if (geometry instanceof google.maps.Data.Point) {
+        callback.call(thisArg, geometry.get());
+      } else if (Array.isArray(geometry)) {
+        geometry.forEach(function (g) {
+          _maps.processPoints(g, callback, thisArg);
+        });
+      } else if (geometry.getArray()) {
+        geometry.getArray().forEach(function (g) {
+          _maps.processPoints(g, callback, thisArg);
+        });
+      }
+    }
+  },
+  getUrlBounds: function getUrlBounds(map) {
+    var bounds = map.getBounds();
+    var nebounds = bounds.getNorthEast();
+    var swbounds = bounds.getSouthWest();
+    var urlbounds = "bounds=" + nebounds.lat() + "," + nebounds.lng() + "|" + swbounds.lat() + "," + swbounds.lng() + "";
+    return urlbounds;
+  },
+  detailUpdateCall: function detailUpdateCall(cb, id) {
+    var detailList = function detailList(data) {
+      var list = [];
+      console.log("UpdateCall", data);
+
+      if (data.formatted_phone_number) {
+        list.push({
+          label: "Phone",
+          values: [data.formatted_phone_number],
+          data: {}
+        });
+      }
+
+      if (data.website) {
+        list.push({
+          label: "Website",
+          values: [data.website],
+          data: {}
+        });
+      }
+
+      if (data.rating) {
+        list.push({
+          label: "Google rating",
+          values: [data.rating],
+          data: {}
+        });
+      }
+
+      return list;
+    };
+
+    var x = _lib.keep.need("google-places");
+
+    var data;
+    var urldetail = "/app/router/google.php?place-id=";
+
+    if (x && x[id]) {
+      data = x[id];
+      cb(detailList(data.result));
+    } else {
+      _lib.ajax("get", urldetail + id, null, function (r) {
+        data = JSON.parse(r);
+
+        if (x) {
+          x[id] = data;
+        } else {
+          x = {};
+          x[id] = data;
+        }
+
+        _lib.keep("google-places", x);
+
+        cb(detailList(data.result));
+      });
+    }
+  },
+  findPlaces: function findPlaces(request, map, data) {
+    var places;
+    if (request.types) places = request.types.join(",");
+    if (request.keywords) places = request.keywords;
+    _maps.markers[places] = [];
+    $mn.findPlaces(request, function (place, add) {
+      add(function () {
+        var placeLoc = place.geometry.location;
+        var html = "<strong>" + place.name + "</strong><br>";
+        html += place.vicinity;
+
+        if (place.opening_hours) {
+          html += "<br>" + (place.opening_hours.open_now ? "Open now" : "Closed now");
+        }
+
+        var black = "black";
+        var icon = "/assets/icons/".concat(black, "/").concat(app.mapkeys.findByLayer(places).pop().icon, ".png");
+        var feature = new google.maps.Data.Feature({
+          geometry: placeLoc
+        });
+        feature.toGeoJson(function (feat) {
+          var list = [];
+
+          if (place.vicinity) {
+            list.push({
+              label: "Address",
+              values: [place.vicinity],
+              data: {}
+            });
+          }
+
+          if (place.opening_hours && place.opening_hours.open_now) {
+            list.push({
+              label: " ",
+              values: [place.opening_hours.open_now ? "Open now" : "Closed now"],
+              data: {}
+            });
+          }
+
+          var data = {
+            location: {
+              lat: placeLoc.lat(),
+              lng: placeLoc.lng()
+            },
+            map: {
+              center: {
+                lat: placeLoc.lat(),
+                lng: placeLoc.lng()
+              }
+            },
+            placeid: place.place_id,
+            detailtag: {
+              value: place.name,
+              image: icon,
+              list: list,
+              options: {
+                "map_layer": places,
+                "map_feature": feat
+              },
+              data: {}
+            }
+          };
+          console.log("PLace:", place);
+          route(location.hash.replace("#map", "selection").replace("#smartmap", "selection"), {
+            data: data
+          });
+        });
+      }, "/assets/pointer/web-pointers-" + data.pointer + ".svg");
+    });
+  },
+  stravaTiles: function stravaTiles(status) {
+    var map = $mn.isMap();
+    var mapBounds = app.conf.chchBounds.get();
+    var mapMinZoom = 8;
+    var mapMaxZoom = 15;
+
+    if (_maps.stravalayer) {
+      map.overlayMapTypes.removeAt(0);
+      map.setOptions({
+        styles: []
+      });
+    }
+
+    if (!status) return;
+    var maptiler = new google.maps.ImageMapType({
+      getTileUrl: function getTileUrl(coord, zoom) {
+        var proj = map.getProjection();
+        var tileSize = 256 / Math.pow(2, zoom);
+        var tileBounds = new google.maps.LatLngBounds(proj.fromPointToLatLng(new google.maps.Point(coord.x * tileSize, (coord.y + 1) * tileSize)), proj.fromPointToLatLng(new google.maps.Point((coord.x + 1) * tileSize, coord.y * tileSize)));
+        console.log(zoom, mapMaxZoom);
+
+        if (mapBounds.intersects(tileBounds) && zoom >= mapMinZoom && zoom <= mapMaxZoom) {
+          //return "http://www.maptiler.org/example-usgs-drg-grand-canyon-gtiff/" +
+          // return "http://metro-static.strava.com/tiles/CHRISTCH/201707_201712/RIDE/" +
+          //return "" +
+          return "/app/router/strava_tiles.php?z=".concat(zoom, "&x=").concat(coord.x, "&y=").concat(coord.y); //+zoom + "/" + coord.x + "/" + coord.y + ".png";
+          // +zoom + "/" + coord.x + "/" + (Math.pow(2, zoom) - coord.y - 1) + ".png";
+        } else return "http://www.maptiler.org/img/none.png";
+      },
+      tileSize: new google.maps.Size(256, 256),
+      isPng: true
+    }); // map.setCenter(new google.maps.LatLng(36.07, -112.19));
+
+    if (map.getZoom() > 14) map.setZoom(14); //map.fitBounds(mapBounds);
+
+    map.setOptions({
+      styles: [{
+        "featureType": "all",
+        "elementType": "labels.text.fill",
+        "stylers": [{
+          "saturation": 36
+        }, {
+          "color": "#000000"
+        }, {
+          "lightness": 40
+        }]
+      }, {
+        "featureType": "all",
+        "elementType": "labels.text.stroke",
+        "stylers": [{
+          "visibility": "on"
+        }, {
+          "color": "#000000"
+        }, {
+          "lightness": 16
+        }]
+      }, {
+        "featureType": "all",
+        "elementType": "labels.icon",
+        "stylers": [{
+          "visibility": "off"
+        }]
+      }, {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 20
+        }]
+      }, {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 17
+        }, {
+          "weight": 1.2
+        }]
+      }, {
+        "featureType": "landscape",
+        "elementType": "geometry",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 20
+        }]
+      }, {
+        "featureType": "poi",
+        "elementType": "geometry",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 21
+        }]
+      }, {
+        "featureType": "road.highway",
+        "elementType": "geometry.fill",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 17
+        }]
+      }, {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 29
+        }, {
+          "weight": 0.2
+        }]
+      }, {
+        "featureType": "road.arterial",
+        "elementType": "geometry",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 18
+        }]
+      }, {
+        "featureType": "road.local",
+        "elementType": "geometry",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 16
+        }]
+      }, {
+        "featureType": "transit",
+        "elementType": "geometry",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 19
+        }]
+      }, {
+        "featureType": "water",
+        "elementType": "geometry",
+        "stylers": [{
+          "color": "#000000"
+        }, {
+          "lightness": 17
+        }]
+      }]
+    });
+    _maps.stravalayer = maptiler;
+    map.overlayMapTypes.insertAt(0, maptiler);
+  },
+  TxtOverlay: function TxtOverlay(pos, txt, cls, map) {
+    this.pos = pos;
+    this.txt_ = txt;
+    this.cls_ = cls;
+    this.map_ = map;
+    this.div_ = null;
+    this.setMap(map);
+    var div = document.createElement("DIV");
+    div.className = this.cls_;
+    div.innerHTML = this.txt_; // Set the overlay's div_ property to this DIV
+
+    this.setTxt = function (newtxt) {
+      this.div_.innerHTML = newtxt;
+    };
+
+    this.setCls = function (newcls) {
+      this.div_.className = newcls;
+    };
+
+    this.setPos = function (newpos) {
+      this.pos = newpos;
+    };
+
+    this.div_ = div;
+  },
+  service: function () {
+    var lat = window.config.location.lat; // "-43.532054";
+
+    var lon = window.config.location.lng;
+    "172.636225";
+    var radius = "50000";
+    var urldetail = "/app/router/google.php?place-id=";
+    return function (q, cb) {
+      var url = "/app/router/google.php?place=" + q + "&lat=" + lat + "&lon=" + lon + "&radius=" + radius;
+
+      _lib.ajax("get", url, null, function (r) {
+        //callback(r);
+        var data = JSON.parse(r); //console.log(data);
+
+        var items = [];
+        var litext = "";
+
+        if (data.status == "OK") {
+          for (var i = 0; i < data.predictions.length; i++) {
+            if (data.predictions[i].structured_formatting.main_text == "New Zealand") continue;
+
+            if (data.predictions[i].structured_formatting.secondary_text.indexOf(window.config.city
+            /*"Christchurch"*/
+            ) === -1) {
+              litext = data.predictions[i].description.replace(", New Zealand", "");
+            } else {
+              litext = data.predictions[i].structured_formatting.main_text;
+            }
+
+            items.push({
+              place: data.predictions[i].place_id,
+              text: litext,
+              getMore: function getMore(self, cb) {
+                var x = _lib.keep.need("google-places");
+
+                var data;
+
+                if (x && x[self.place]) {
+                  data = x[self.place];
+                  cb(data.result);
+                } else {
+                  _lib.ajax("get", urldetail + self.place, null, function (r) {
+                    data = JSON.parse(r);
+
+                    if (x) {
+                      x[self.place] = data;
+                    } else {
+                      x = {};
+                      x[self.place] = data;
+                    }
+
+                    _lib.keep("google-places", x);
+
+                    cb(data.result);
+                  });
+                }
+              }
+            });
+          }
+        }
+
+        cb(items);
+      }, null, "googlePlaceSearch", true);
+    };
+  }(),
+  stSnap: {
+    cSnapToRoute: function cSnapToRoute() {
+      this.routePoints = Array();
+      this.routePixels = Array();
+      this._oMap;
+      this._oPolyline;
+      /**
+       *   @desc Initialize the objects.
+       *   @param Map object
+       *   @param GPolyline object - the 'route'
+       **/
+
+      this.init = function (oMap, oPolyline) {
+        var _this2 = this;
+
+        this._oMap = oMap;
+        this._oPolyline = oPolyline;
+
+        if (!this._oPolyline.getArray) {
+          this._oPolyline.getArray = function () {
+            return _this2._oPolyline.getPath().getArray();
+          };
+        }
+
+        this.loadRouteData(); // Load needed data for point calculations
+      };
+      /**
+       *   @desc internal use only, Load route points into RoutePixel array for calculations, do this whenever zoom changes 
+       **/
+
+
+      this.loadRouteData = function () {
+        this.routePixels = new Array();
+
+        var proj = this._oMap.getProjection();
+
+        var polyarray = this._oPolyline.getArray();
+
+        for (var i = 0; i < polyarray.length; i++) {
+          var Px = proj.fromLatLngToPoint(polyarray[i]);
+          this.routePixels.push(Px);
+        }
+      };
+      /**
+       *   @desc Get closest point on route to test point
+       *   @param GLatLng() the test point
+       *   @return new GLatLng();
+       **/
+
+
+      this.getClosestLatLng = function (latlng) {
+        var r = this.distanceToLines(latlng);
+
+        var proj = this._oMap.getProjection();
+
+        return proj.fromPointToLatLng(new google.maps.Point(r.x, r.y));
+      };
+
+      this.getAll = function (latlng) {
+        var r = this.distanceToLines(latlng);
+
+        var proj = this._oMap.getProjection();
+
+        r.latlng = proj.fromPointToLatLng(new google.maps.Point(r.x, r.y));
+        return r;
+      };
+      /**
+       *   @desc Get distance along route in meters of closest point on route to test point
+       *   @param GLatLng() the test point
+       *   @return distance in meters;
+       **/
+
+
+      this.getDistAlongRoute = function (latlng) {
+        var r = this.distanceToLines(latlng);
+        return this.getDistToLine(r.i, r.fTo);
+      };
+      /**
+       *   @desc internal use only, gets test point xy and then calls fundamental algorithm
+       **/
+
+
+      this.distanceToLines = function (thisLatLng) {
+        var tm = this._oMap;
+
+        var proj = this._oMap.getProjection();
+
+        var thisPx = proj.fromLatLngToPoint(thisLatLng);
+        var routePixels = this.routePixels;
+        return this.getClosestPointOnLines(thisPx, routePixels);
+      };
+      /**
+       *   @desc internal use only, find distance along route to point nearest test point
+       **/
+
+
+      this.getDistToLine = function (iLine, fTo) {
+        var routeOverlay = this._oPolyline;
+
+        var polyarray = this._oPolyline.getArray();
+
+        var d = 0;
+
+        for (var n = 1; n < iLine; n++) {
+          if (routeOverlay.getPath().getAt(n - 1).distanceFrom) d += routeOverlay.getPath().getAt(n - 1).distanceFrom(routeOverlay.getPath().getAt(n));else d += google.maps.geometry.spherical.computeDistanceBetween(routeOverlay.getPath().getAt(n - 1), routeOverlay.getPath().getAt(n));
+        }
+
+        if (routeOverlay.getPath().getAt(iLine - 1).distanceFrom) d += routeOverlay.getPath().getAt(iLine - 1).distanceFrom(routeOverlay.getPath().getAt(iLine)) * fTo;else d += google.maps.geometry.spherical.computeDistanceBetween(routeOverlay.getPath().getAt(iLine - 1), routeOverlay.getPath().getAt(iLine)) * fTo;
+        /* 
+        for (var n = 1; n < iLine; n++) {
+            d += routeOverlay.getPath().getAt(n - 1).distanceFrom(routeOverlay.getPath().getAt(n));
+        }
+        d += routeOverlay.getPath().getAt(iLine - 1).distanceFrom(routeOverlay.getPath().getAt(iLine)) * fTo;
+        */
+
+        return d;
+      };
+
+      this.getClosestPointOnLines = function (pXy, aXys) {
+        var minDist;
+        var fTo;
+        var fFrom;
+        var x;
+        var y;
+        var i;
+        var dist;
+
+        if (aXys.length > 1) {
+          for (var n = 1; n < aXys.length; n++) {
+            if (aXys[n].x != aXys[n - 1].x) {
+              var a = (aXys[n].y - aXys[n - 1].y) / (aXys[n].x - aXys[n - 1].x);
+              var b = aXys[n].y - a * aXys[n].x;
+              dist = Math.abs(a * pXy.x + b - pXy.y) / Math.sqrt(a * a + 1);
+            } else dist = Math.abs(pXy.x - aXys[n].x); // length^2 of line segment 
+
+
+            var rl2 = Math.pow(aXys[n].y - aXys[n - 1].y, 2) + Math.pow(aXys[n].x - aXys[n - 1].x, 2); // distance^2 of pt to end line segment
+
+            var ln2 = Math.pow(aXys[n].y - pXy.y, 2) + Math.pow(aXys[n].x - pXy.x, 2); // distance^2 of pt to begin line segment
+
+            var lnm12 = Math.pow(aXys[n - 1].y - pXy.y, 2) + Math.pow(aXys[n - 1].x - pXy.x, 2); // minimum distance^2 of pt to infinite line
+
+            var dist2 = Math.pow(dist, 2); // calculated length^2 of line segment
+
+            var calcrl2 = ln2 - dist2 + lnm12 - dist2; // redefine minimum distance to line segment (not infinite line) if necessary
+
+            if (calcrl2 > rl2) dist = Math.sqrt(Math.min(ln2, lnm12));
+
+            if (minDist == null || minDist > dist) {
+              if (calcrl2 > rl2) {
+                if (lnm12 < ln2) {
+                  fTo = 0; //nearer to previous point
+
+                  fFrom = 1;
+                } else {
+                  fFrom = 0; //nearer to current point
+
+                  fTo = 1;
+                }
+              } else {
+                // perpendicular from point intersects line segment
+                fTo = Math.sqrt(lnm12 - dist2) / Math.sqrt(rl2);
+                fFrom = Math.sqrt(ln2 - dist2) / Math.sqrt(rl2);
+              }
+
+              minDist = dist;
+              i = n;
+            }
+          }
+
+          var dx = aXys[i - 1].x - aXys[i].x;
+          var dy = aXys[i - 1].y - aXys[i].y;
+          x = aXys[i - 1].x - dx * fTo;
+          y = aXys[i - 1].y - dy * fTo;
+        }
+
+        return {
+          'x': x,
+          'y': y,
+          'i': i,
+          'fTo': fTo,
+          'fFrom': fFrom
+        };
+      };
+    }
+    /* desc Static function. Find point on lines nearest test point
+       test point pXy with properties .x and .y
+       lines defined by array aXys with nodes having properties .x and .y 
+       return is object with .x and .y properties and property i indicating nearest segment in aXys 
+       and property fFrom the fractional distance of the returned point from aXy[i-1]
+       and property fTo the fractional distance of the returned point from aXy[i]   */
+
+  },
+  GeoJSON: function GeoJSON(geojson, options, getpoints) {
+    var points = [];
+
+    var _geometryToGoogleMaps = function _geometryToGoogleMaps(geojsonGeometry, opts, geojsonProperties) {
+      var googleObj;
+
+      switch (geojsonGeometry.type) {
+        case "Point":
+          opts.position = new google.maps.LatLng(geojsonGeometry.coordinates[1], geojsonGeometry.coordinates[0]);
+          points.push(opts.position);
+          googleObj = new google.maps.Marker(opts);
+
+          if (geojsonProperties) {
+            googleObj.set("geojsonProperties", geojsonProperties);
+          }
+
+          break;
+
+        case "MultiPoint":
+          googleObj = [];
+
+          for (var i = 0; i < geojsonGeometry.coordinates.length; i++) {
+            opts.position = new google.maps.LatLng(geojsonGeometry.coordinates[i][1], geojsonGeometry.coordinates[i][0]);
+            points.push(opts.position);
+            googleObj.push(new google.maps.Marker(opts));
+          }
+
+          if (geojsonProperties) {
+            for (var k = 0; k < googleObj.length; k++) {
+              googleObj[k].set("geojsonProperties", geojsonProperties);
+            }
+          }
+
+          break;
+
+        case "LineString":
+          var path = [];
+
+          for (var i = 0; i < geojsonGeometry.coordinates.length; i++) {
+            var coord = geojsonGeometry.coordinates[i];
+            var ll = new google.maps.LatLng(coord[1], coord[0]);
+            points.push(ll);
+            path.push(ll);
+          }
+
+          opts.path = path;
+          googleObj = new google.maps.Polyline(opts);
+
+          if (geojsonProperties) {
+            googleObj.set("geojsonProperties", geojsonProperties);
+          }
+
+          break;
+
+        case "MultiLineString":
+          googleObj = [];
+
+          for (var i = 0; i < geojsonGeometry.coordinates.length; i++) {
+            var path = [];
+
+            for (var j = 0; j < geojsonGeometry.coordinates[i].length; j++) {
+              var coord = geojsonGeometry.coordinates[i][j];
+              var ll = new google.maps.LatLng(coord[1], coord[0]);
+              points.push(ll);
+              path.push(ll);
+            }
+
+            opts.path = path;
+            googleObj.push(new google.maps.Polyline(opts));
+          }
+
+          if (geojsonProperties) {
+            for (var k = 0; k < googleObj.length; k++) {
+              googleObj[k].set("geojsonProperties", geojsonProperties);
+            }
+          }
+
+          break;
+
+        case "Polygon":
+          var paths = [];
+          var exteriorDirection;
+          var interiorDirection;
+
+          for (var i = 0; i < geojsonGeometry.coordinates.length; i++) {
+            var path = [];
+
+            for (var j = 0; j < geojsonGeometry.coordinates[i].length; j++) {
+              var ll = new google.maps.LatLng(geojsonGeometry.coordinates[i][j][1], geojsonGeometry.coordinates[i][j][0]);
+              points.push(ll);
+              path.push(ll);
+            }
+
+            if (!i) {
+              exteriorDirection = _ccw(path);
+              paths.push(path);
+            } else if (i == 1) {
+              interiorDirection = _ccw(path);
+
+              if (exteriorDirection == interiorDirection) {
+                paths.push(path.reverse());
+              } else {
+                paths.push(path);
+              }
+            } else {
+              if (exteriorDirection == interiorDirection) {
+                paths.push(path.reverse());
+              } else {
+                paths.push(path);
+              }
+            }
+          }
+
+          opts.paths = paths;
+          googleObj = new google.maps.Polygon(opts);
+
+          if (geojsonProperties) {
+            googleObj.set("geojsonProperties", geojsonProperties);
+          }
+
+          break;
+
+        case "MultiPolygon":
+          googleObj = [];
+
+          for (var i = 0; i < geojsonGeometry.coordinates.length; i++) {
+            var paths = [];
+            var exteriorDirection;
+            var interiorDirection;
+
+            for (var j = 0; j < geojsonGeometry.coordinates[i].length; j++) {
+              var path = [];
+
+              for (var k = 0; k < geojsonGeometry.coordinates[i][j].length; k++) {
+                var ll = new google.maps.LatLng(geojsonGeometry.coordinates[i][j][k][1], geojsonGeometry.coordinates[i][j][k][0]);
+                points.push(ll);
+                path.push(ll);
+              }
+
+              if (!j) {
+                exteriorDirection = _ccw(path);
+                paths.push(path);
+              } else if (j == 1) {
+                interiorDirection = _ccw(path);
+
+                if (exteriorDirection == interiorDirection) {
+                  paths.push(path.reverse());
+                } else {
+                  paths.push(path);
+                }
+              } else {
+                if (exteriorDirection == interiorDirection) {
+                  paths.push(path.reverse());
+                } else {
+                  paths.push(path);
+                }
+              }
+            }
+
+            opts.paths = paths;
+            googleObj.push(new google.maps.Polygon(opts));
+          }
+
+          if (geojsonProperties) {
+            for (var k = 0; k < googleObj.length; k++) {
+              googleObj[k].set("geojsonProperties", geojsonProperties);
+            }
+          }
+
+          break;
+
+        case "GeometryCollection":
+          googleObj = [];
+
+          if (!geojsonGeometry.geometries) {
+            googleObj = _error('Invalid GeoJSON object: GeometryCollection object missing "geometries" member.');
+          } else {
+            for (var i = 0; i < geojsonGeometry.geometries.length; i++) {
+              googleObj.push(_geometryToGoogleMaps(geojsonGeometry.geometries[i], opts, geojsonProperties || null));
+            }
+          }
+
+          break;
+
+        default:
+          googleObj = _error('Invalid GeoJSON object: Geometry object must be one of "Point", "LineString", "Polygon" or "MultiPolygon".');
+      }
+
+      return googleObj;
+    };
+
+    var _error = function _error(message) {
+      return {
+        type: "Error",
+        message: message
+      };
+    };
+
+    var _ccw = function _ccw(path) {
+      var isCCW;
+      var a = 0;
+
+      for (var i = 0; i < path.length - 2; i++) {
+        a += (path[i + 1].lat() - path[i].lat()) * (path[i + 2].lng() - path[i].lng()) - (path[i + 2].lat() - path[i].lat()) * (path[i + 1].lng() - path[i].lng());
+      }
+
+      if (a > 0) {
+        isCCW = true;
+      } else {
+        isCCW = false;
+      }
+
+      return isCCW;
+    };
+
+    var obj;
+    var opts = options || {};
+
+    switch (geojson.type) {
+      case "FeatureCollection":
+        if (!geojson.features) {
+          obj = _error('Invalid GeoJSON object: FeatureCollection object missing "features" member.');
+        } else {
+          obj = [];
+
+          for (var i = 0; i < geojson.features.length; i++) {
+            obj.push(_geometryToGoogleMaps(geojson.features[i].geometry, opts, geojson.features[i].properties));
+          }
+        }
+
+        break;
+
+      case "GeometryCollection":
+        if (!geojson.geometries) {
+          obj = _error('Invalid GeoJSON object: GeometryCollection object missing "geometries" member.');
+        } else {
+          obj = [];
+
+          for (var i = 0; i < geojson.geometries.length; i++) {
+            obj.push(_geometryToGoogleMaps(geojson.geometries[i], opts));
+          }
+        }
+
+        break;
+
+      case "Feature":
+        if (!(geojson.properties && geojson.geometry)) {
+          obj = _error('Invalid GeoJSON object: Feature object missing "properties" or "geometry" member.');
+        } else {
+          obj = _geometryToGoogleMaps(geojson.geometry, opts, geojson.properties);
+        }
+
+        break;
+
+      case "Point":
+      case "MultiPoint":
+      case "LineString":
+      case "MultiLineString":
+      case "Polygon":
+      case "MultiPolygon":
+        obj = geojson.coordinates ? obj = _geometryToGoogleMaps(geojson, opts) : _error('Invalid GeoJSON object: Geometry object missing "coordinates" member.');
+        break;
+
+      default:
+        obj = _error('Invalid GeoJSON object: GeoJSON object must be one of "Point", "LineString", "Polygon", "MultiPolygon", "Feature", "FeatureCollection" or "GeometryCollection".');
+    }
+
+    return getpoints ? points : obj;
+  }
+};
+
+var $mn = function (riot, extend) {
+  var $lastZoom;
+  var $lastSize;
+  var $map;
+  var $directionService;
+  var $placesService;
+  var $trafficLayer;
+  var $markers = {
+    list: {},
+    flatten: function flatten() {
+      var _this3 = this;
+
+      return Object.keys(this.list).reduce(function (r, a) {
+        return r.concat(_this3.list[a]);
+      }, []);
+    },
+    getVisible: function getVisible() {
+      var flat = this.flatten();
+      var bounds = $map.getBounds();
+      var visible = flat.filter(function (a) {
+        return bounds.contains(a.getPosition());
+      });
+      return visible;
+    },
+    findClosest: function findClosest() {
+      var flat = this.flatten();
+
+      if (flat.length > 0) {
+        var center = $map.getCenter();
+        flat.sort(function (a, b) {
+          return google.maps.geometry.spherical.computeDistanceBetween(center, a.getPosition()) - google.maps.geometry.spherical.computeDistanceBetween(center, b.getPosition());
+        });
+        var first = flat[0];
+        return {
+          marker: first,
+          distance: google.maps.geometry.spherical.computeDistanceBetween(center, first.getPosition()),
+          direction: google.maps.geometry.spherical.computeHeading(center, first.getPosition())
+        };
+      } else {
+        return false;
+      }
+    },
+    add: function add(loc, icon, click, layer, place) {
+      var marker = new google.maps.Marker({
+        position: loc,
+        icon: {
+          url: icon,
+          scaledSize: app.conf.mapIconSize()
+        }
+      });
+      google.maps.event.addListener(marker, 'click', click);
+      marker.setMap($map);
+      marker.$ = {
+        layer: layer,
+        place: place
+      };
+
+      if (!this.list[layer]) {
+        this.list[layer] = [];
+      }
+
+      this.list[layer].push(marker);
+
+      _map.trigger('layer/change');
+
+      return marker;
+    },
+    "delete": function _delete(layer) {
+      if (this.list[layer]) {
+        var list = this.list[layer];
+
+        for (var i = list.length - 1; i >= 0; i--) {
+          list.pop().setMap(null);
+        }
+      }
+    },
+    has: function has(layer) {
+      return this.list[layer] && this.list[layer].length > 0;
+    },
+    clear: function clear(skip) {
+      var _this4 = this;
+
+      Object.keys(this.list).filter(function (layer) {
+        return layer != skip;
+      }).forEach(function (layer) {
+        return _this4["delete"](layer, true);
+      });
+
+      _map.trigger('layer/change');
+    }
+  };
+  var $layers = {
+    list: {},
+    activeFeature: null,
+    activateFeature: function activateFeature(f) {
+      this.deactivateFeature();
+      f.setProperty('active', true);
+      this.activeFeature = f;
+      $mn.one('map/idle', function () {
+        setTimeout(function () {
+          $triggerIcon(f, true);
+        }, 1000);
+      });
+    },
+    deactivateFeature: function deactivateFeature() {
+      if (this.activeFeature) this.activeFeature.setProperty('active', false);
+      this.activeFeature = null;
+    },
+    isActiveFeature: function isActiveFeature() {
+      return this.activeFeature;
+    },
+    flatten: function flatten() {
+      var _this5 = this;
+
+      return Object.keys(this.list).reduce(function (r, a) {
+        return r.concat(_this5.list[a]);
+      }, []);
+    },
+    getVisible: function getVisible() {
+      var flat = this.flatten();
+      var bounds = $map.getBounds();
+      if (!bounds) return [];
+      var visible = flat.filter(function (a) {
+        var vis = false;
+        if (a.getProperty('hidden')) return false;
+        if (typeof a.getProperty("visible") == "boolean" && a.getProperty("visible") == false) return false;
+        if (!a.getGeometry()) return false;
+        a.getGeometry().forEachLatLng(function (b) {
+          if (bounds.contains(b)) {
+            vis = true;
+          }
+        });
+        return vis;
+      });
+      return visible;
+    },
+    findClosest: function findClosest() {
+      var flat = this.flatten().filter(function (a) {
+        return !a.getProperty('hidden');
+      });
+
+      if (flat.length > 0) {
+        var center = $map.getCenter();
+        flat.sort(function (a, b) {
+          return google.maps.geometry.spherical.computeDistanceBetween(center, _maps.getCenter(a.getGeometry())) - google.maps.geometry.spherical.computeDistanceBetween(center, _maps.getCenter(b.getGeometry()));
+        });
+        var first = flat[0];
+        return {
+          marker: first,
+          distance: google.maps.geometry.spherical.computeDistanceBetween(center, _maps.getCenter(first.getGeometry())),
+          direction: google.maps.geometry.spherical.computeHeading(center, _maps.getCenter(first.getGeometry()))
+        };
+      } else {
+        return false;
+      }
+    },
+    addOne: function addOne(f, name) {
+      this.list[name].push(f);
+    },
+    add: function add(json, name) {
+      if (json && json.features) {
+        for (var i = 0, n = json.features.length; i < n; i++) {
+          if (json.features[i].geometry && json.features[i].geometry.geometries) {
+            json.features[i].geometry.type = 'GeometryCollection';
+          }
+        }
+
+        if (this.list[name] && this.list[name].length > 0) {
+          this["delete"](name, true);
+        }
+      }
+
+      this.list[name] = $$map().data.addGeoJson(json);
+
+      _map.trigger('layer/loaded/' + name, this.list[name]);
+
+      _map.trigger('layer/change');
+
+      return this.list[name];
+    },
+    "delete": function _delete(layer, silent) {
+      if (this.list[layer]) {
+        var list = this.list[layer];
+
+        for (var i = list.length - 1; i >= 0; i--) {
+          $map.data.remove(list.pop());
+        }
+
+        if (list.length == 0) {
+          delete this.list[layer];
+
+          _map.trigger('layer/unloaded/' + layer);
+        }
+      }
+
+      if (!silent) {
+        _map.trigger('layer/change');
+      }
+    },
+    clear: function clear(skip) {
+      var _this6 = this;
+
+      Object.keys(this.list).filter(function (layer) {
+        return layer != skip;
+      }).forEach(function (layer) {
+        return _this6["delete"](layer, true);
+      });
+
+      _map.trigger('layer/change');
+    },
+    has: function has(layer) {
+      return this.list[layer] && this.list[layer].length > 0;
+    },
+    find: function find(feat) {
+      // debugger
+      var tmpf = $$map().data.addGeoJson(feat).pop();
+      var samef = false;
+      $$map().data.forEach(function (a) {
+        if (a != tmpf && a.getGeometry() && tmpf.getGeometry() && a.getGeometry().getType() == tmpf.getGeometry().getType() && (a.getGeometry().get && a.getGeometry().get().toString() == tmpf.getGeometry().get().toString() || a.getGeometry().getArray && a.getGeometry().getArray().toString() == tmpf.getGeometry().getArray().toString())) {
+          samef = a;
+        }
+      });
+      $$map().data.remove(tmpf);
+      return samef;
+    },
+    eachLayer: function eachLayer(cb) {
+      Object.keys(this.list).forEach(function (a) {
+        return cb(a);
+      });
+    },
+    each: function each(cb) {
+      if ($map) $$map().data.forEach(cb);
+    }
+  };
+
+  var $initMapTxtOverlay = function $initMapTxtOverlay() {
+    _maps.TxtOverlay.prototype = new google.maps.OverlayView();
+
+    _maps.TxtOverlay.prototype.onAdd = function () {
+      // Note: an overlay's receipt of onAdd() indicates that
+      // the map's panes are now available for attaching
+      // the overlay to the map via the DOM.
+      // Create the DIV and set some basic attributes.
+
+      /* var div = document.createElement('DIV')
+                           div.className = this.cls_
+                           div.innerHTML = this.txt_
+                           // Set the overlay's div_ property to this DIV
+                           this.div_ = div;*/
+      var div = this.div_;
+      var overlayProjection = this.getProjection();
+      var position = overlayProjection.fromLatLngToDivPixel(this.pos);
+      div.style.left = position.x + 'px';
+      div.style.top = position.y + 'px'; // We add an overlay to a map via one of the map's panes.
+
+      var panes = this.getPanes();
+      panes.floatPane.appendChild(div); // panes.overlayMouseTarget.appendChild(div)
+    };
+
+    _maps.TxtOverlay.prototype.draw = function () {
+      var overlayProjection = this.getProjection(); // Retrieve the southwest and northeast coordinates of this overlay
+      // in latlngs and convert them to pixels coordinates.
+      // We'll use these coordinates to resize the DIV.
+
+      if (overlayProjection) {
+        var position = overlayProjection.fromLatLngToDivPixel(this.pos);
+        var div = this.div_;
+        div.style.left = position.x + 'px';
+        div.style.top = position.y + 'px';
+      }
+    }; // Optional: helper methods for removing and toggling the text overlay.
+
+
+    _maps.TxtOverlay.prototype.onRemove = function () {
+      if (this.div_ && this.div_.parentNode) {
+        this.div_.parentNode.removeChild(this.div_);
+      }
+
+      this.div_ = null;
+    };
+
+    _maps.TxtOverlay.prototype.hide = function () {
+      if (this.div_) {
+        this.div_.style.visibility = 'hidden';
+      }
+    };
+
+    _maps.TxtOverlay.prototype.show = function () {
+      if (this.div_) {
+        this.div_.style.visibility = 'visible';
+      }
+    };
+
+    _maps.TxtOverlay.prototype.toggle = function () {
+      if (this.div_) {
+        if (this.div_.style.visibility == 'hidden') {
+          this.show();
+        } else {
+          this.hide();
+        }
+      }
+    };
+
+    _maps.TxtOverlay.prototype.toggleDOM = function () {
+      if (this.getMap()) {
+        this.setMap(null);
+      } else {
+        this.setMap(this.map_);
+      }
+    };
+  };
+
+  var $newInit = function $newInit(div, options) {
+    var fullOptions = extend($defaultOptions, options);
+    var map = new google.maps.Map(div, fullOptions);
+    $lastZoom = fullOptions.zoom;
+    return map;
+  };
+
+  var $init = function $init(div, options) {
+    $initMapTxtOverlay();
+    if ($map) return $map;
+    $map = $newInit(div, options);
+    google.maps.event.addListener($map, 'idle', function () {
+      _map.trigger('map/idle');
+    });
+    $map.addListener('click', function (e) {
+      _map.trigger('click', e);
+    });
+    $map.addListener('bounds_changed', function () {
+      _map.trigger('bounds/changed');
+    });
+    $map.addListener('center_changed', function () {
+      _map.trigger('center/changed');
+    });
+    $map.addListener('zoom_changed', function () {
+      _map.trigger('zoom/changed');
+
+      var dontchange = {
+        zoom: false
+      };
+      $mn.layers.eachLayer(function (layer) {
+        _map.trigger('zoom/change/check/' + layer, dontchange);
+      });
+
+      if (!dontchange.zoom) {
+        var mult = 1;
+        var visiblecount = $layers.getVisible().length;
+
+        if (visiblecount > 15 && visiblecount < 30) {
+          mult = 0.75;
+        } else if (visiblecount > 30) {
+          mult = 0.5;
+        }
+
+        var scaledSizeActive = app.conf.mapIconSizeActive();
+        var defaultScaledSize = app.conf.mapIconSize(1, mult, undefined, visiblecount);
+
+        if (!($lastSize && $lastSize.equals(defaultScaledSize))) {
+          $lastSize = defaultScaledSize;
+          $map.data.forEach(function (f) {
+            var o = $map.data.getStyle()(f);
+            var r;
+
+            if (o.icon && o.icon.scaledSize && o.icon.scaledSize) {
+              if (f.getProperty('active')) {
+                o.icon.scaledSize = scaledSizeActive;
+              } else {
+                if (f.getProperty('r')) {
+                  r = f.getProperty('r');
+                  o.icon.scaledSize = app.conf.mapIconSize(r, mult);
+                } else {
+                  o.icon.scaledSize = defaultScaledSize;
+                }
+              }
+
+              $map.data.overrideStyle(f, o);
+            }
+          });
+        }
+      }
+
+      $lastZoom = $map.getZoom();
+    });
+    $map.data.addListener('removefeature', function (feat) {
+      _map.trigger('feature/remove', feat);
+    });
+    $map.data.addListener('addfeature', function (feat) {
+      _map.trigger('feature/add', feat);
+    });
+    $map.data.addListener('click', function (e) {
+      _map.trigger('feature/click', e);
+    });
+    return $map;
+  };
+
+  var $loadGoogle = function $loadGoogle(key, cb, promise) {
+    if (!document.getElementById($scriptId)) {
+      var script = document.createElement('script');
+      script.setAttribute('id', $scriptId);
+      script.type = 'text/javascript';
+      script.async = 'async';
+      script.defer = 'defer';
+
+      this.googleLoaded = function () {
+        if (cb) {
+          cb();
+        }
+
+        if (promise) {
+          promise.resolve();
+        }
+
+        _map.trigger('google/loaded');
+      };
+
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=' + key + '&libraries=places,visualization,geometry&callback=$mn.googleLoaded&language=en-AU&region=NZ';
+      document.body.appendChild(script);
+      return false;
+    } else {
+      if (promise) {
+        promise.resolve();
+      }
+
+      return true;
+    }
+  };
+
+  var $initDirectionService = function $initDirectionService() {
+    $directionService = new google.maps.DirectionsService();
+    return $directionService;
+  };
+
+  var $initPlacesService = function $initPlacesService() {
+    $placesService = new google.maps.places.PlacesService(document.createElement('div')); // $placesService = new google.maps.places.PlacesService($$map())
+
+    return $placesService;
+  };
+
+  var $getPlaceService = function $getPlaceService() {
+    return $placesService || $initPlacesService();
+  };
+
+  var $findPlacesRaw = function $findPlacesRaw(request, cb) {
+    if ($mn.isMap()) {
+      request = extend(request, {
+        location: {
+          lat: $center().lat(),
+          lng: $center().lng()
+        },
+        radius: 50000
+      });
+    } else {
+      request = extend(request, {
+        location: {
+          lat: app.gmap.center.lat,
+          lng: app.gmap.center.lng
+        },
+        radius: 50000
+      });
+    }
+
+    app.promise.google().then(function () {
+      $getPlaceService().nearbySearch(request, cb);
+    });
+  };
+
+  var $findPlaces = function $findPlaces(request, cb) {
+    $findPlacesRaw(request, function (results, status) {
+      if (status == google.maps.places.PlacesServiceStatus.OK) {
+        var places;
+        if (request.types) places = request.types.join(',');
+        if (request.keywords) places = request.keywords;
+        $markers["delete"](places);
+
+        var _loop = function _loop() {
+          var place = results[i];
+          place.places = places;
+          cb(place, function (click, icon) {
+            $markers.add(place.geometry.location, icon, click, places, place);
+          });
+        };
+
+        for (var i = 0; i < results.length; i++) {
+          _loop();
+        }
+      }
+    });
+  };
+
+  var $refresh = function $refresh() {
+    var c = $center();
+    google.maps.event.trigger($$map(), 'resize');
+    $map.setCenter(c);
+  };
+
+  var $$map = function $$map() {
+    if ($map) {
+      return $map;
+    } else {
+      return $init(document.querySelector($defaultDiv), {});
+    }
+  };
+
+  var $pushControl = function $pushControl(ele, pos) {
+    $$map().controls[google.maps.ControlPosition[pos]].push(ele);
+  };
+
+  var $center = function $center() {
+    return $$map().getCenter();
+  };
+
+  var $zoom = function $zoom() {
+    return $$map().getZoom();
+  };
+
+  var $toggleTraffic = function $toggleTraffic(toggle) {
+    if (!$trafficLayer) {
+      $trafficLayer = new google.maps.TrafficLayer();
+    }
+
+    $trafficLayer.setMap(toggle ? $map : null);
+  };
+
+  var $triggerIcon = function $triggerIcon(iconOwner, noRevert) {
+    noRevert = noRevert || false;
+    var endsize = app.conf.mapIconSizeActive();
+    var t = 1;
+    var r = 4;
+    var maxt = 1000;
+    var mint = 20;
+
+    if (!iconOwner.$) {
+      var old = $mn.isMap().data.getStyle()(iconOwner);
+
+      if (old.icon && old.icon.scaledSize) {
+        var oh = old.icon.scaledSize.height;
+        var ow = old.icon.scaledSize.width;
+        if (!noRevert) $mn.isMap().data.revertStyle();
+      }
+    } else {
+      var old = iconOwner.getIcon();
+      var oh = old.scaledSize.height;
+      var ow = old.scaledSize.width;
+    }
+
+    var tstep = mint;
+    var endt = maxt / tstep;
+    var step = (endsize.height - oh) * r / endt;
+
+    if (step == 0) {
+      oh = 48;
+      tstep = mint;
+      endt = maxt / 2 / tstep;
+      step = (endsize.height - oh) * r / endt;
+    }
+
+    var nh = oh;
+    var nw = ow;
+    var interval = setInterval(function () {
+      nh = nh + step;
+      nw = nw + step;
+
+      if (nh >= endsize.height || nh <= oh) {
+        step *= -1;
+      }
+
+      t++;
+
+      if (!iconOwner.$) {
+        if (old.icon && old.icon.scaledSize) {
+          old.icon.scaledSize.height = nh;
+          old.icon.scaledSize.width = nw;
+          $mn.isMap().data.overrideStyle(iconOwner, old);
+        }
+      } else {
+        old.scaledSize.height = nh;
+        old.scaledSize.width = nw;
+        iconOwner.setIcon(old);
+      }
+
+      if (t >= endt && nh >= endsize.height) {
+        if (!noRevert) $mn.isMap().data.revertStyle();
+        clearInterval(interval);
+      }
+    }, tstep);
+  };
+
+  var $darkStyle = {
+    styles: [{
+      "featureType": "all",
+      "elementType": "labels.text.fill",
+      "stylers": [{
+        "saturation": 36
+      }, {
+        "color": "#000000"
+      }, {
+        "lightness": 40
+      }]
+    }, {
+      "featureType": "all",
+      "elementType": "labels.text.stroke",
+      "stylers": [{
+        "visibility": "on"
+      }, {
+        "color": "#000000"
+      }, {
+        "lightness": 16
+      }]
+    }, {
+      "featureType": "all",
+      "elementType": "labels.icon",
+      "stylers": [{
+        "visibility": "off"
+      }]
+    }, {
+      "featureType": "administrative",
+      "elementType": "geometry.fill",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 20
+      }]
+    }, {
+      "featureType": "administrative",
+      "elementType": "geometry.stroke",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 17
+      }, {
+        "weight": 1.2
+      }]
+    }, {
+      "featureType": "landscape",
+      "elementType": "geometry",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 20
+      }]
+    }, {
+      "featureType": "poi",
+      "elementType": "geometry",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 21
+      }]
+    }, {
+      "featureType": "road.highway",
+      "elementType": "geometry.fill",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 17
+      }]
+    }, {
+      "featureType": "road.highway",
+      "elementType": "geometry.stroke",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 29
+      }, {
+        "weight": 0.2
+      }]
+    }, {
+      "featureType": "road.arterial",
+      "elementType": "geometry",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 18
+      }]
+    }, {
+      "featureType": "road.local",
+      "elementType": "geometry",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 16
+      }]
+    }, {
+      "featureType": "transit",
+      "elementType": "geometry",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 19
+      }]
+    }, {
+      "featureType": "water",
+      "elementType": "geometry",
+      "stylers": [{
+        "color": "#000000"
+      }, {
+        "lightness": 17
+      }]
+    }]
+  };
+  var $defaultOptions = {
+    center: {
+      lat: -43.5268699,
+      lng: 172.6477791
+    },
+    zoom: 18,
+    disableDefaultUI: true,
+    zoomControl: true,
+    zoomControlOptions: {
+      //position: 4
+      position: 7 //position: google.maps.ControlPosition.RIGHT_TOP
+
+    },
+    fullscreenControl: false,
+    gestureHandling: 'greedy',
+    styles: [{
+      "featureType": "all",
+      "elementType": "all",
+      "stylers": [{
+        "saturation": -100
+      }, {
+        "gamma": 0.5
+      }]
+    }, {
+      featureType: "poi",
+      elementType: "labels",
+      stylers: [{
+        visibility: "off"
+      }]
+    }]
+    /*[{
+                    featureType: 'transit.station',
+                    elementType: 'labels',
+                    stylers: [{
+                        visibility: 'off'
+                    }]
+    }]*/
+
+  };
+  var __map = {
+    init: $init,
+    newInit: $newInit,
+    initDirectionService: $initDirectionService,
+    refresh: $refresh,
+    pushControl: $pushControl,
+    center: $center,
+    zoom: $zoom,
+    lastZoom: function lastZoom() {
+      return $lastZoom;
+    },
+    triggerIcon: $triggerIcon,
+    loadGoogle: $loadGoogle,
+    toggleTraffic: $toggleTraffic,
+    findPlaces: $findPlaces,
+    findPlacesRaw: $findPlacesRaw,
+    markers: $markers,
+    layers: $layers,
+    isMap: function isMap() {
+      return $map;
+    },
+    defaultOptions: $defaultOptions,
+    darkStyle: $darkStyle
+  };
+
+  var _map = riot.observable(__map);
+
+  var $defaultDiv = '.google-map';
+  var $scriptId = 'gmap_script';
+  return _map;
+}(riot, riot.util.misc.extend);
+
+var app = function (riot, route) {
+  var _conf = {
+    defaultMapZoom: 18,
+    mapIconSize: function mapIconSize(r, mult, zoom, count) {
+      if (typeof zoom == "undefined") zoom = $mn.isMap().getZoom();
+      if (typeof r == "undefined") r = 1;
+      if (typeof mult == "undefined") mult = 1;
+      if (typeof count == "undefined") count = 1;
+
+      if (zoom <= 12) {
+        return new google.maps.Size(24 * r, 24 * r);
+      } else if (zoom < 15) {
+        return new google.maps.Size(32 * r, 32 * r);
+      } else {
+        return new google.maps.Size(48 * r * mult, 48 * r * mult);
+      }
+    },
+    mapIconSizeActive: function mapIconSizeActive() {
+      return function (x, y) {
+        return new google.maps.Size(x, y);
+      }(64, 64);
+    },
+    buttons: {
+      journeyPlanner: "Plan my trip"
+    },
+    texts: {
+      filterZero: "No results found under selected filter conditions.",
+      noListView: "Dataset(s) not available as a list view."
+    },
+    chchBounds: {
+      lefttop: window.config.bbox.lefttop,
+      rightbot: window.config.bbox.rightbot,
+      get: function get() {
+        return new google.maps.LatLngBounds(new google.maps.LatLng(this.lefttop[0], this.lefttop[1]), new google.maps.LatLng(this.rightbot[0], this.rightbot[1]));
+      },
+      isout: function isout($lat, $lng) {
+        if (!$lat || !$lng) {
+          $lat = app.location.current.point.lat;
+          $lng = app.location.current.point.lng;
+        }
+
+        if ($lat > this.rightbot[0] || $lat < this.lefttop[0] || $lng < this.lefttop[1] || $lng > this.rightbot[1]) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    },
+    bus_routes_colors: _defineProperty({
+      randomColor: function randomColor() {
+        var rand255 = function rand255() {
+          return Math.round(Math.random() * 255);
+        };
+
+        return [rand255(), rand255(), rand255(), 255].join(",");
+      },
+      get: function get(route) {
+        return this[route] ? this[route] : this[route] = this.randomColor();
+      },
+      "85": "241,91,76,255",
+      "86": "221,21,96,255",
+      "87": "201,71,16,255",
+      "17": "236,0,140,255",
+      "28": "247,147,40,255",
+      "29": "0,83,159,255",
+      "44": "0,116,173,255",
+      "45": "35,110,121,255",
+      "60": "218,111,171,255",
+      "80": "113,125,189,255",
+      "81": "88,125,189,255",
+      "95": "179,136,8,255",
+      "100": "136,128,126,255",
+      "107": "70,162,153,255",
+      "108": "162,133,179,255",
+      "120": "250,166,26,255",
+      "125": "95,153,55,255",
+      "130": "159,57,37,255",
+      "135": "13,177,75,255",
+      "140": "0,146,158,255",
+      "145": "149,100,56,255",
+      "150": "152,83,161,255",
+      "155": "152,83,161,255",
+      "535": "210,191,165,255",
+      "820": "70,186,124,255",
+      "951": "0,157,178,255",
+      "952": "128,206,202,255",
+      "960": "241,91,78,255",
+      "B": "62,188,237,255",
+      "1": "62,188,237,255",
+      "F": "0,88,153,255",
+      "Gl": "255,218,0,255",
+      "Gr": "0,182,181,255",
+      "O": "243,112,33,255",
+      "7": "243,112,33,255",
+      "Oc": "121,188,67,255",
+      "Or": "121,188,67,255",
+      "Oa": "121,188,67,255",
+      "P": "85,69,136,255",
+      "3": "85,69,136,255",
+      "TL": "191,110,173,255",
+      "W": "0,182,181,255",
+      "Y": "255,194,14,255",
+      "5": "255,194,14,255"
+    }, "F", "0,0,255,255")
+  };
+
+  Object.byString = function (o, s) {
+    s = s.replace(/\[(\w+)\]/g, '.$1');
+    s = s.replace(/^\./, '');
+    var a = s.split('.');
+
+    for (var i = 0, n = a.length; i < n; ++i) {
+      var k = a[i];
+
+      if (o != null && k in o) {
+        o = o[k];
+      } else {
+        return;
+      }
+    }
+
+    return o;
+  };
+
+  var extend = function extend() {
+    // Variables
+    var extended = {};
+    var deep = true;
+    var i = 0;
+    var length = arguments.length; // Check if a deep merge
+
+    if (Object.prototype.toString.call(arguments[0]) === '[object Boolean]') {
+      deep = arguments[0];
+      i++;
+    } // Merge the object into the extended object
+
+
+    var merge = function merge(obj) {
+      for (var prop in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+          // If deep merge and property is an object, merge properties
+          if (deep && Object.prototype.toString.call(obj[prop]) === '[object Object]') {
+            extended[prop] = extend(true, extended[prop], obj[prop]);
+          } else {
+            extended[prop] = obj[prop];
+          }
+        }
+      }
+    }; // Loop through each object and conduct a merge
+
+
+    for (; i < length; i++) {
+      var obj = arguments[i];
+      merge(obj);
+    }
+
+    return extended;
+  };
+
+  var hash = function hash(str) {
+    var seed = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    var h1 = 0xdeadbeef ^ seed,
+        h2 = 0x41c6ce57 ^ seed;
+
+    for (var i = 0, ch; i < str.length; i++) {
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+
+    h1 = Math.imul(h1 ^ h1 >>> 16, 2246822507) ^ Math.imul(h2 ^ h2 >>> 13, 3266489909);
+    h2 = Math.imul(h2 ^ h2 >>> 16, 2246822507) ^ Math.imul(h1 ^ h1 >>> 13, 3266489909);
+    return (h2 >>> 0).toString(16).padStart(8, 0) + (h1 >>> 0).toString(16).padStart(8, 0);
+  };
+
+  var _routed = {};
+  var _header = {
+    search: true,
+    title: false,
+    back: false,
+    menu: true,
+    setTitle: function setTitle(title) {
+      if (title && title != "SmartView") {
+        document.title = title + " - SmartView " + window.city;
+      } else {
+        document.title = "SmartView " + window.city;
+      }
+
+      document.querySelector("meta[property='og:title']").setAttribute("content", document.title);
+    },
+    setDescription: function setDescription(desc) {
+      if (!desc || desc == "") {
+        desc = "Realtime information in your pocket.";
+      }
+
+      document.querySelector("meta[property='og:description']").setAttribute("content", desc);
+      document.querySelector("meta[name='description']").setAttribute("content", desc);
+    }
+  };
+  var _maplegend = {
+    legends: [],
+    list: [],
+    filter: false,
+    collapse: false,
+    reset: function reset() {
+      var filter = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+      this.list = [];
+      this.filter = false;
+      this.collapse = false;
+
+      if (filter === true) {
+        this.legends = [];
+      } else {
+        this.legends = this.legends.filter(function (a) {
+          return $mn.layers.has(a.name) && a.name != filter;
+        });
+      }
+
+      return this;
+    },
+    init: function init(data) {
+      if (typeof data.name == "undefined") {
+        data.name = app.routed.data.detail;
+      }
+
+      this.reset(data.name);
+      this.legends.push(data);
+
+      if (typeof data.list != "undefined") {
+        this.setList(data.list);
+      }
+
+      if (typeof data.filter != "undefined") {
+        this.setFilter(data.filter);
+      }
+
+      if (typeof data.collapse != "undefined") {
+        this.collapse = data.collapse || this.collapse;
+      }
+
+      return this;
+    },
+    doesCollapse: function doesCollapse() {
+      return this.legends.map(function (a) {
+        return a.collapse;
+      }).reduce(function (r, a) {
+        return r || a;
+      }, false);
+    },
+    isActive: function isActive() {
+      return this.legends.map(function (a) {
+        return a.filter;
+      }).reduce(function (r, a) {
+        return r || a;
+      }, false) || this.getList().length > 0;
+    },
+    setList: function setList(list) {
+      this.list = list;
+      return this;
+    },
+    getList: function getList() {
+      // return this.list;
+      return this.legends.map(function (a) {
+        return a.list;
+      }).flat();
+    },
+    appendList: function appendList(list) {
+      this.list.concat(list);
+      return this;
+    },
+    setFilter: function setFilter(filter) {
+      this.filter = filter;
+      return this;
+    },
+    update: function update() {
+      if (app.tags.mapLegend) {
+        app.tags.mapLegend.update();
+      } else if (app.tags.map) {
+        app.tags.map.update();
+      }
+
+      return this;
+    }
+  };
+  var _favs = {
+    db: null,
+    onchange: function onchange(cb) {
+      this.db.on('changes', function (changes) {
+        cb(changes);
+      });
+    },
+    hashFav: function hashFav(detail) {
+      if (detail) {
+        var hashstr = detail.detail;
+
+        if (detail.id) {
+          hashstr += "|" + detail.id;
+        }
+
+        return hash(hashstr);
+      }
+    },
+    init: function init() {
+      var _this7 = this;
+
+      this.db = new Dexie("favourites");
+      this.db.version(3).stores({
+        favs: 'detail,page,item,updated_on' //data
+
+      });
+      this.db.version(4).stores({
+        favs2: 'hash,detail,page,item,updated_on' //data
+
+      }).upgrade(function (tx) {
+        return tx.favs.toArray().then(function (favs) {
+          favs.forEach(function (a) {
+            a.hash = _this7.hashFav(a);
+          });
+          return tx.favs2.bulkAdd(favs);
+        });
+      });
+      this.db.version(5).stores({
+        favs: null
+      });
+      this.db.version(6).stores({
+        favs: 'hash,detail,page,item,updated_on' //data
+
+      }).upgrade(function (tx) {
+        return tx.favs2.toArray().then(function (favs) {
+          return tx.favs.bulkAdd(favs);
+        });
+      });
+      this.db.version(7).stores({
+        favs2: null
+      });
+      this.db.open();
+    },
+    getAll: function getAll(cb) {
+      this.db.favs.toArray().then(function (a) {
+        return cb(a);
+      });
+    },
+    get: function get(detail, cb) {
+      var ret = [];
+      var hash = this.hashFav(detail);
+      var x = this.db.favs.where('hash').equalsIgnoreCase(hash).each(function (a) {
+        return ret.push(a);
+      }).then(function (a) {
+        return cb(ret);
+      });
+      return ret;
+    },
+    getByPage: function getByPage(page, cb) {
+      var ret = [];
+      var x = this.db.favs.where('page').equalsIgnoreCase(page).each(function (a) {
+        return ret.push(a);
+      }).then(function (a) {
+        return cb(ret);
+      });
+      return ret;
+    },
+    add: function add(item) {
+      item.hash = this.hashFav(item);
+      localStorage.setItem("favourite-alert-" + item.detail, true);
+      this.db.favs.put(item);
+    },
+    remove: function remove(item) {
+      item.hash = this.hashFav(item);
+      this.db.favs["delete"](item.hash);
+    },
+    ajax: function ajax(item, cb) {
+      var extra = "";
+
+      if (item.location && item.location == "current") {
+        extra += "&lat=" + app.lastPosition.lat;
+        extra += "&lng=" + app.lastPosition.lng;
+      } else if (item.location) {
+        extra += "&lat=" + item.location.lat;
+        extra += "&lng=" + item.location.lng;
+      }
+
+      if (item.id) {
+        extra += "&id=" + item.id;
+      }
+
+      _lib.ajax.$get("/app/router/icon.php?quick&" + item.detail + "=fav" + extra, function (res) {
+        cb(res);
+      });
+    }
+  };
+  var _state = {
+    timeout: 0,
+    set: function set(data) {
+      clearTimeout(this.timeout);
+      this.timeout = setTimeout(function () {
+        var st = history.state;
+        st = extend(st, data);
+        history.replaceState(st, null, null);
+      }, 100);
+    },
+    get: function get(what) {
+      return Object.byString(history.state, what);
+    }
+  };
+  var _storage = {
+    set: function set(data) {
+      Object.keys(data).forEach(function (a) {
+        window.localStorage[a] = JSON.stringify(data[a]);
+      });
+    },
+    get: function get(what) {
+      what = what.split(".");
+      var obj;
+      var key = what.splice(0, 1);
+
+      if (what.length > 0) {
+        what = what.join(".");
+        var x = window.localStorage[key];
+
+        if (x) {
+          obj = JSON.parse(x);
+          obj = Object.byString(obj, what);
+        }
+      } else {
+        var x = window.localStorage[key];
+
+        if (x) {
+          obj = JSON.parse(x);
+        }
+      }
+
+      return obj;
+    }
+  };
+  var _session = {
+    set: function set(data) {
+      Object.keys(data).forEach(function (a) {
+        window.sessionStorage[a] = JSON.stringify(data[a]);
+      });
+    },
+    get: function get(what) {
+      what = what.split(".");
+      var obj;
+      var key = what.splice(0, 1);
+
+      if (what.length > 0) {
+        what = what.join(".");
+        var x = window.sessionStorage[key];
+
+        if (x) {
+          obj = JSON.parse(x);
+          obj = Object.byString(obj, what);
+        }
+      } else {
+        var x = window.sessionStorage[key];
+
+        if (x) {
+          obj = JSON.parse(x);
+        }
+      }
+
+      return obj;
+    }
+  };
+  var _journies = {
+    list: [],
+    clear: function clear() {
+      while (this.list.length > 0) {
+        var item = this.list.pop();
+        item.animStop();
+        item.poly.setMap(null);
+        item = null;
+      }
+    },
+    add: function add(line, data) {
+      var poly = new google.maps.Polyline({
+        path: line,
+        map: app.gmap.map,
+        strokeColor: "blue",
+        strokeOpacity: 0.5,
+        strokeWeight: 6,
+        icons: [{
+          icon: {
+            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+            scale: 4,
+            strokeColor: "red"
+          },
+          offset: "0%"
+        }, {
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 4,
+            strokeColor: 'red'
+          },
+          offset: '100%'
+        }, {
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 4,
+            strokeColor: 'green'
+          },
+          offset: '0%'
+        }]
+      });
+      var bounds = new google.maps.LatLngBounds();
+      poly.getPath().forEach(function (item, index) {
+        bounds.extend(new google.maps.LatLng(item.lat(), item.lng()));
+      });
+      var j = {
+        animInterval: null,
+        line: line,
+        data: data,
+        poly: poly,
+        bounds: bounds,
+        animStart: function animateCircle() {
+          var count = 0;
+          var line = this.poly;
+          this.animInterval = window.setInterval(function () {
+            count = (count + 1) % 200;
+            var icons = line.get('icons');
+            icons[0].offset = count / 2 + '%';
+            line.set('icons', icons);
+          }, 50);
+        },
+        animStop: function animStop() {
+          window.clearInterval(this.animInterval);
+        }
+      };
+      this.list.push(j);
+      return j;
+    }
+  };
+  var _mapkeys = {
+    list: [],
+    lastList: [],
+    init: function init() {
+      this.list = Object.keys(_pages).reduce(function (a, key) {
+        if (_pages[key].mapkeys) _pages[key].mapkeys.reduce(function (a, item) {
+          if (item.data) {
+            if (!item.data["map-layer"]) {
+              item.layer = item.data["map-feature"] || item.data["map-places"] || item.data["map-search"] || item.data["map-callback"];
+            } else {
+              item.layer = item.data["map-layer"].split(";");
+            }
+          } else {
+            item.layer = "";
+          }
+
+          a.push(item);
+          return a;
+        }, a);
+        return a;
+      }, []);
+    },
+    findByLayer: function findByLayer(layer) {
+      return this.list.filter(function (a) {
+        return Array.isArray(a.layer) ? a.layer.includes(layer) : a.layer == layer;
+      });
+    },
+    getChecked: function getChecked() {
+      return this.list.filter(function (a) {
+        return a.checked;
+      });
+    },
+    setLast: function setLast(list) {
+      return this.lastList = list;
+    },
+    checkList: function checkList(list) {
+      Array.isArray(list) && this.list.forEach(function (a) {
+        a.checked = list.some(function (b) {
+          return b.label == a.label;
+        });
+      });
+    },
+    filterCall: function filterCall(calls) {
+      var _this8 = this;
+
+      this.lastList.filter(function (item) {
+        return !_this8.getChecked().some(function (a) {
+          return a.label == item.label;
+        });
+      }).forEach(function (a) {
+        return calls(a).remove();
+      });
+      this.getChecked().filter(function (item) {
+        return !_this8.lastList.some(function (a) {
+          return a.label == item.label;
+        });
+      }).forEach(function (a) {
+        return calls(a).add();
+      });
+      return this.getChecked();
+    },
+    doCall: function doCall(item) {
+      var _this9 = this;
+
+      return Object.keys(item.data).filter(function (key) {
+        return !!_this9.calls[key];
+      }).reduce(function (f, x) {
+        return _this9.calls[x];
+      }, function () {
+        return {
+          add: function add(a) {
+            return console.log(a);
+          },
+          remove: function remove(a) {
+            return console.log(a);
+          }
+        };
+      })(item);
+    },
+    calls: {
+      "map-feature": function mapFeature(item) {
+        return {
+          add: function add() {
+            _gmap.trigger("load-features", {
+              item: item.data["map-feature"]
+            });
+          },
+          remove: function remove() {
+            _gmap.trigger("remove-features", {
+              item: item.data["map-feature"]
+            });
+          }
+        };
+      },
+      "map-places": function mapPlaces(item) {
+        return {
+          add: function add() {
+            _gmap.trigger("load-google", {
+              pointer: item.pointer,
+              place: item.data["map-places"]
+            });
+          },
+          remove: function remove() {
+            _gmap.trigger("remove-google", {
+              place: item.data["map-places"]
+            });
+          }
+        };
+      },
+      "map-search": function mapSearch(item) {
+        return {
+          add: function add() {
+            _gmap.trigger("load-google", {
+              pointer: item.pointer,
+              place: item.data["map-search"]
+            });
+          },
+          remove: function remove() {
+            _gmap.trigger("remove-google", {
+              place: item.data["map-search"]
+            });
+          }
+        };
+      },
+      "map-google": function mapGoogle(item) {
+        return {
+          add: function add() {
+            _gmap.trigger("load-traffic", {});
+          },
+          remove: function remove() {
+            _gmap.trigger("remove-traffic", {});
+          }
+        };
+      },
+      "map-callback": function mapCallback(item) {
+        return {
+          add: function add() {
+            _maps[item.data["map-callback"]](true);
+          },
+          remove: function remove() {
+            _maps[item.data["map-callback"]](false);
+          }
+        };
+      }
+    }
+  };
+  var _updates = {
+    visible: false,
+    list: [],
+    version: 0,
+    is: function is() {
+      return this.visible && this.list.length > 0;
+    },
+    hide: function hide() {
+      this.visible = false;
+      app.tags.updatebar.update();
+    },
+    getList: function getList() {
+      return Array.from(this.list);
+    },
+    getLastUpdate: function getLastUpdate() {
+      this.version = _storage.get("update-version");
+      return this.version;
+    },
+    setLastUpdate: function setLastUpdate(ver) {
+      this.version = ver;
+
+      _storage.set({
+        "update-version": ver
+      });
+    },
+    checkUpdate: function checkUpdate() {
+      this.getLastUpdate();
+
+      _lib.ajax.$get("/router/version.php?ver=" + this.version, function (data) {});
+    }
+  };
+  var _alert = {
+    message: "",
+    title: false,
+    collapsed: false,
+    hideonhide: false,
+    expandedJustOnce: false,
+    list: false,
+    is: function is() {
+      return !!this.message || !!this.list;
+    },
+    set: function set(msg) {
+      if (typeof msg == "string") {
+        this.message = msg;
+        this.title = false;
+        this.collapsed = false;
+        this.list = false;
+        this.hideonhide = false;
+        this.expandedJustOnce = false;
+      } else {
+        this.message = msg.msg || "";
+        this.title = msg.title || false;
+        this.collapsed = msg.collapsed || false;
+        this.list = msg.list || false;
+        this.hideonhide = msg.hideonhide || false;
+        this.expandedJustOnce = msg.expandedJustOnce || false;
+
+        if (this.expandedJustOnce) {
+          if (app.storage.get(this.expandedJustOnce)) {
+            this.collapsed = true;
+          } else {
+            this.collapsed = false;
+            app.storage.set(_defineProperty({}, this.expandedJustOnce, true));
+          }
+        }
+      }
+
+      document.body.classList.toggle("alerted", this.is());
+      app.tags.alert.update();
+    }
+  };
+  var _pages = {};
+  var _menu = [{
+    name: "home",
+    label: "Home",
+    svgIcon: "home",
+    homePage: false,
+    hash: " "
+  }, {
+    name: "play",
+    label: "Find",
+    icon: '/assets/publica/dashboard/find.svg',
+    svgIcon: "find",
+    color: "var(--color-play-bg)",
+    iconColor: "var(--color-play-fg)",
+    homePage: true
+  }, {
+    name: "travel",
+    label: "On the go",
+    icon: '/assets/publica/dashboard/onthego.svg',
+    svgIcon: "onthego",
+    color: "var(--color-travel-bg)",
+    iconColor: "var(--color-travel-fg)",
+    homePage: true
+  }, {
+    name: "environment",
+    label: "Environment",
+    icon: '/assets/publica/dashboard/environment.svg',
+    svgIcon: "environment",
+    color: "var(--color-environment-bg)",
+    iconColor: "var(--color-environment-fg)",
+    homePage: true
+  }, {
+    name: "now",
+    label: "News",
+    icon: '/assets/publica/dashboard/news.svg',
+    svgIcon: "news",
+    color: "var(--color-now-bg)",
+    iconColor: "var(--color-now-fg)",
+    homePage: true,
+    hash: "now/news",
+    subs: false
+  }, {
+    name: "community",
+    label: "Connect",
+    icon: '/assets/publica/dashboard/connect.svg',
+    svgIcon: "connect",
+    color: "var(--color-community-bg)",
+    iconColor: "var(--color-community-fg)",
+    soon: false,
+    homePage: true
+  }, {
+    name: "feelme",
+    label: "Feedback",
+    icon: '/assets/publica/sets/Feedback_Icon.svg',
+    svgIcon: "feedback",
+    color: "var(--color-feelme-bg)",
+    soon: false,
+    homePage: false,
+    subs: false
+  }, {
+    name: "extra",
+    label: "Covid-19",
+    icon: '/assets/publica/my/Corona.svg',
+    svgIcon: "about",
+    labelColor: "var(--color-extra-fg)",
+    bgImage: "repeating-linear-gradient(-45deg,#ffdc52,#ffdc52 15px,#fff 15px,#fff  29px)",
+    color: "var(--color-extra-bg)",
+    iconColor: "var(--color-extra-fg)",
+    homePage: true,
+    hash: "extra/covid19",
+    subs: false
+  },
+  /*         { name: "profile", label: "My profile", icon: 'my_profile', soon: true, homePage: false },               
+          { name: "share", label: "Share", icon: 'share', soon: true, homePage: false }, */
+
+  /*  { name: "events", label: "What's On", image: '/assets/publica/menu/whatson.svg', homePage: false, hash: "events" },*/
+  {
+    name: "settings",
+    label: "Settings",
+    color: "#d11b6a",
+    iconColor: "#b51e53",
+    icon: '/assets/publica/dashboard/Settings_Icon.svg',
+    svgIcon: "settings",
+    homePage: false,
+    "static": true,
+    tag: "static-settings"
+  }, {
+    name: "about",
+    label: "About",
+    icon: '/assets/publica/sets/About_Icon.svg',
+    svgIcon: "about",
+    homePage: false,
+    "static": true,
+    tag: "static-about"
+  }];
+
+  if (window.debug) {
+    _menu.push({
+      name: "snap",
+      label: "Report or Request",
+      color: "#d11b6a",
+      iconColor: "#b51e53",
+      icon: '/assets/publica/dashboard/Settings_Icon.svg',
+      svgIcon: "settings",
+      homePage: false,
+      "static": true,
+      tag: "snapsendsolve"
+    });
+
+    _menu.push({
+      name: "safetysnap",
+      label: "Safety snap",
+      color: "#d11b6a",
+      iconColor: "#b51e53",
+      icon: '/assets/publica/dashboard/Settings_Icon.svg',
+      svgIcon: "settings",
+      homePage: false,
+      "static": true,
+      tag: "safetysnap"
+    });
+
+    _menu.push({
+      name: "accsnap",
+      label: "Accessibility snap",
+      color: "#d11b6a",
+      iconColor: "#b51e53",
+      icon: '/assets/publica/dashboard/Settings_Icon.svg',
+      svgIcon: "settings",
+      homePage: false,
+      "static": true,
+      tag: "accsnap"
+    });
+
+    _menu.push({
+      name: "voice",
+      label: "Voice recognition",
+      color: "#d11b6a",
+      iconColor: "#b51e53",
+      icon: '/assets/publica/dashboard/Settings_Icon.svg',
+      svgIcon: "settings",
+      homePage: false,
+      "static": true,
+      tag: "voice-recognition"
+    });
+  }
+
+  var _api = function () {
+    var routerURL = "/app/router/";
+    var mapFeatures = "map_features.php";
+
+    var urlFeatures = function urlFeatures(feat, extra) {
+      var u = routerURL + mapFeatures + "?feat=" + feat;
+
+      if (extra.itemid) {
+        u = u + "&extra=" + extra.itemid;
+      }
+
+      if (extra.filter) {
+        u = u + "&filter=" + extra.filter;
+      }
+
+      return u;
+    };
+
+    return {
+      urlFeatures: urlFeatures
+    };
+  }();
+
+  var _gmap = function () {
+    return riot.observable({
+      features: [],
+      marker: null,
+      center: {
+        lat: -43.5268699,
+        lng: 172.6477791,
+        "default": true
+      },
+      zoom: 16,
+      mapStyle: function mapStyle(feat) {
+        var style = {};
+        app.trigger("map/feature/style", feat, style);
+
+        if (feat.getProperty("active")) {
+          if (style.icon) {
+            style.icon.scaledSize = new google.maps.Size(64, 64);
+          }
+
+          style.strokeColor = "rgb(242, 92, 117)";
+          style.strokeWeight = 8;
+        }
+
+        return style;
+      },
+      setKey: function setKey(mapkey, state) {
+        if (typeof state === "undefined") {
+          state = true;
+        }
+
+        Object.keys(app.pages).forEach(function (key) {
+          app.pages[key].mapkeys.forEach(function (item) {
+            if (item.label == mapkey || item.data["map-feature"] == mapkey || item.data["map-callback"] == mapkey) {
+              item.checked = state;
+            }
+          });
+        }); // _mapkeys.setLast(_mapkeys.getChecked());
+      },
+      setKeyAll: function setKeyAll(state, skip) {
+        if (typeof state === "undefined") {
+          state = true;
+        }
+
+        Object.keys(app.pages).forEach(function (key) {
+          app.pages[key].mapkeys.filter(function (item) {
+            return item.label != skip && item.layer != skip;
+          }).forEach(function (item) {
+            item.checked = state;
+
+            if (state == false) {
+              app.mapkeys.doCall(item).remove();
+            }
+          });
+        });
+
+        _mapkeys.setLast(_mapkeys.getChecked());
+      },
+      init: function init() {
+        app.on("map/setcenter", function (center, zoom) {
+          if (typeof center == "string") {
+            center = JSON.parse(center);
+            center = {
+              lat: center.coordinates[1],
+              lng: center.coordinates[0]
+            };
+          } else if (Array.isArray(center)) {
+            center = {
+              lat: Number(center[1]),
+              lng: Number(center[0])
+            };
+          }
+
+          if (center) app.gmap.center = center;
+          if (zoom) app.gmap.zoom = parseInt(zoom);
+        });
+        app.on("map/recenter", function () {
+          //   app.debug && console.log(app.gmap.center, app.gmap.zoom, app.gmap);
+          //   console.trace();
+          if (app.gmap.map) {
+            if ((!app.gmap.center || app.gmap.center["default"]) && app.gmap.marker) {
+              app.gmap.center = {
+                lat: app.gmap.marker.lat,
+                lng: app.gmap.marker.lng
+              };
+            }
+
+            if (app.gmap.center) {
+              //console.trace();
+              app.gmap.map.setCenter(app.gmap.center);
+            }
+
+            if (app.gmap.zoom) {
+              app.gmap.map.setZoom(app.gmap.zoom);
+            }
+          }
+        });
+        app.on("map/ready", function () {
+          app.gmap.map.data.setStyle(app.gmap.mapStyle);
+        });
+        app.on("map/center", function (cb) {
+          var createMarker = function createMarker(pos, cb2) {
+            app.promise.map().then(function () {
+              if (app.gmap.marker) return;
+
+              function HTMLMarker(pos) {
+                this.lat = pos.lat;
+                this.lng = pos.lng;
+                this.div = null;
+                this.pos = new google.maps.LatLng(pos);
+                return this;
+              }
+
+              HTMLMarker.prototype = new google.maps.OverlayView();
+
+              HTMLMarker.prototype.onRemove = function () {};
+
+              HTMLMarker.prototype.setPosition = function (pos) {
+                this.lat = pos.lat;
+                this.lng = pos.lng;
+                this.pos = new google.maps.LatLng(pos);
+                this.draw();
+              }; //init your html element here
+
+
+              HTMLMarker.prototype.onAdd = function () {
+                this.div = document.createElement('DIV');
+                this.div.className = "current_location";
+                this.div.innerHTML = "<div class=current_location_core></div><div class=current_location_pulse></div>";
+                this.div.style.position = "absolute";
+                var panes = this.getPanes();
+                panes.floatPane.appendChild(this.div);
+              };
+
+              HTMLMarker.prototype.draw = function () {
+                var _this10 = this;
+
+                var overlayProjection = this.getProjection();
+
+                if (overlayProjection) {
+                  var position = overlayProjection.fromLatLngToDivPixel(this.pos); // var panes = this.getPanes();
+
+                  this.div.style.left = position.x + 'px';
+                  this.div.style.top = position.y + 'px';
+                } else {
+                  google.maps.event.addListenerOnce(this.map, "projection_changed", function () {
+                    overlayProjection = _this10.getProjection();
+
+                    if (overlayProjection) {
+                      var position = overlayProjection.fromLatLngToDivPixel(_this10.pos); // var panes = this.getPanes();
+
+                      _this10.div.style.left = position.x + 'px';
+                      _this10.div.style.top = position.y + 'px';
+                    } else {
+                      console.log("overlayProjection failed?");
+                    }
+                  });
+                }
+              };
+
+              app.on("geolocation/changed", function (data) {
+                app.gmap.marker.setPosition(app.location.current.point);
+                ;
+              }); //to use it
+
+              app.gmap.marker = new HTMLMarker(pos);
+              app.gmap.marker.setMap(app.gmap.map);
+              if (cb2) cb2();
+            });
+          };
+
+          if (app.gmap.marker) {
+            app.gmap.marker.setPosition(app.location.current.point);
+            app.gmap.center = app.location.current.point;
+            app.trigger("map/recenter");
+          } else {
+            createMarker(app.location.current.point, function () {
+              if (!Object.byString(history.state, "map.zoom")) {
+                app.gmap.zoom = _conf.defaultMapZoom;
+              }
+
+              if (app.gmap["default"]) {
+                app.gmap.center = app.location.current.point;
+                app.trigger("map/recenter");
+              }
+            });
+          }
+
+          if (app.location.current.source == "default") app.location.geo(function (pos) {
+            if (!pos.err) {
+              if (!app.gmap.marker) {
+                createMarker(pos, function () {
+                  if (!Object.byString(history.state, "map.zoom")) {
+                    app.gmap.zoom = _conf.defaultMapZoom;
+                  }
+
+                  app.gmap.center = pos;
+                  app.trigger("map/recenter");
+                });
+              } else {
+                app.gmap.marker.setPosition(pos);
+
+                if (!Object.byString(history.state, "map.zoom")) {
+                  app.gmap.zoom = _conf.defaultMapZoom;
+                }
+
+                app.gmap.center = pos;
+                app.trigger("map/recenter");
+              }
+            }
+          });
+        });
+
+        if (!(app.routed.data && (app.routed.data.map && app.routed.data.map.center || app.routed.data.feature))) {
+          app.trigger("map/center");
+        }
+
+        app.on("map/data/load", function () {
+          _mapkeys.setLast(_mapkeys.filterCall(_mapkeys.doCall.bind(_mapkeys)));
+
+          app.session.set({
+            map: {
+              mapkeys: _mapkeys.getChecked()
+            }
+          });
+        });
+        return window.app.gmap.trigger("init");
+      }
+    });
+  }();
+
+  function _pages2menu() {
+    Object.keys(_pages).forEach(function (key) {
+      _menu.filter(function (i) {
+        return i.name == key;
+      }).filter(function (m) {
+        return m.subs !== false;
+      }).forEach(function (m) {
+        m.subs = _pages[key].nodes.map(function (item) {
+          if (item.label) {
+            item.title = item.label;
+          } else {
+            var split = item.text.split("<br>");
+            item.title = split[0];
+            item.data = split.length > 1 ? split[1] : "";
+          }
+
+          if (item.image) {// console.log(item);
+          } else if (item.icon2 || item.icon) {
+            item.image = item.icon2 ? item.icon2 : item.icon;
+            item.image = "/assets/svg/" + item.image + "-black.svg";
+          }
+
+          if (m.color) {
+            item.color = m.color;
+          }
+
+          return extend(item, {
+            name: item.name,
+            image: item.image,
+            label: item.title,
+            hash: "".concat(key, "/").concat(item.name)
+          });
+        });
+      });
+    });
+  }
+
+  ;
+
+  function _pulseRoute(pulse, force, maponly) {
+    var mapRoute = function mapRoute() {
+      var det = pulse["map-layer"] ? pulse["map-layer"] : pulse.options["map-layer"];
+      var mapconf = {
+        zoom: _conf.defaultMapZoom,
+        locate: true
+      };
+
+      if (!pulse["map-options"] && pulse["options"] && pulse["options"]["map-options"]) {
+        pulse["map-options"] = pulse["options"]["map-options"];
+      }
+
+      if (pulse["map-options"] && pulse["map-options"]["zoom"]) {
+        mapconf.zoom = pulse["map-options"]["zoom"];
+      }
+
+      if (pulse["map-options"] && pulse["map-options"]["contain-all"]) {
+        mapconf.locate = false;
+        mapconf.contain = true;
+      }
+
+      if (pulse["map-options"] && pulse["map-options"]["boundClosest"]) {
+        mapconf.boundClosest = true;
+      }
+      /* 
+       if (pulse["map-options"] && pulse["map-options"]["contain-all"]) {
+           mapconf.locate = false;
+           mapconf.contain = true;
+       } 
+       */
+      // console.log("pulse", pulse);
+
+
+      route("map/layers/" + det, {
+        detail: det,
+        filter: pulse.options["map-filter"] ? pulse.options["map-filter"] : false,
+        clear: true,
+        map: mapconf,
+        force: force
+      });
+    };
+
+    if (pulse["map-key"]) {
+      var det = pulse["map-key"];
+      route("map/key/" + det, {
+        clear: true,
+        map: {
+          mapkey: det,
+          zoom: 13,
+          locate: true
+        },
+        force: force
+      });
+    } else if ((!pulse["gallery"] || maponly) && (pulse["map-layer"] || pulse.options["map-layer"] && maponly)) {
+      // && !pulse["list"]
+      mapRoute();
+      return true;
+    } else if (!maponly) {
+      if (pulse.hash) route(pulse.hash);else route(pulse.cls[0] + "/" + pulse.name);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  function _isDatasetActive(dataset) {
+    if (_routed.page) {
+      if (Array.isArray(_routed.page)) {
+        return _routed.page.some(function (a) {
+          return a == dataset;
+        }) ? "page" : false;
+      } else if (_routed.page == dataset) {
+        return "page";
+      }
+    } else if (_routed.map) {
+      return $mn.layers.has(dataset) ? "map" : false;
+    } else if (_routed.selection) {
+      return $mn.layers.has(dataset) ? "selection" : false;
+    }
+
+    return false;
+  }
+
+  var _location = {
+    lastGoogleAjax: null,
+    googleCodeInterval: null,
+    googleCodeMs: 100,
+    geocodes: [],
+    remember: [],
+    current: {
+      point: window.config.location,
+      city: false,
+      title: window.config.city,
+      titleLong: window.config.city,
+      source: 'default',
+      change: function change(data) {
+        this.point.lat = data.point.lat;
+        this.point.lng = data.point.lng;
+        this.title = data.title ? data.title : false;
+        this.titleLong = data.titleLong ? data.titleLong : false;
+        this.source = data.source;
+        app.lastPosition = this.point;
+      },
+      get: function get() {
+        return {
+          point: this.point,
+          title: this.title,
+          titleLong: this.titleLong
+        };
+      }
+    },
+    last: {
+      point: window.config.location,
+      title: window.config.city,
+      titleLong: window.config.city,
+      source: 'default',
+      change: function change(data) {
+        this.point.lat = data.point.lat;
+        this.point.lng = data.point.lng;
+        this.title = data.title ? data.title : false;
+        this.titleLong = data.titleLong ? data.titleLong : false;
+        this.source = data.source;
+      }
+    },
+    watcherHandle: false,
+    geoCallback: function geoCallback(pos) {
+      app.location.current.change({
+        point: {
+          lat: pos.lat,
+          lng: pos.lng
+        },
+        source: 'geolocation'
+      });
+      app.trigger('geolocation/changed', app.location.current);
+    },
+    geo: function geo(cb) {
+      if (app.location.watcherHandle) {
+        if (cb) cb(app.location.current.point);
+        return;
+      }
+
+      if (navigator.geolocation) {
+        var options = {
+          maximumAge: 1000,
+          enableHighAccuracy: true
+        };
+
+        var callback = function callback(position) {
+          var pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          if (app) app.lastPosition = pos;
+          app.location.geoCallback(pos);
+          if (cb) cb(pos, function (ret) {
+            var d = {
+              point: ret.point,
+              title: ret.name,
+              titleLong: ret.longName,
+              source: 'geocode'
+            };
+            app.location.last.change(d);
+          });
+        };
+
+        callback({
+          coords: {
+            latitude: app.location.last.point.lat,
+            longitude: app.location.last.point.lng
+          }
+        });
+        navigator.geolocation.getCurrentPosition(callback, function (err) {
+          console.log(err);
+        }, options);
+        app.location.geoStop();
+        app.location.watcherHandle = navigator.geolocation.watchPosition(callback, function (err) {
+          console.log(err);
+        }, options);
+      } else {// handleLocationError(false, infoWindow, map.getCenter())
+      }
+    },
+    geoStop: function geoStop() {
+      if (app.location.watcherHandle) navigator.geolocation.clearWatch(app.location.watcherHandle);
+      app.location.watcherHandle = false;
+    },
+    geocode: function geocode(cb, force) {
+      function googlecode(pos, cb2) {
+        //var mss = app.location.googleCodeInterval ? 5000 : 100;
+        //console.log(app.location.googleCodeInterval, app.location.googleCodeMs);
+        clearTimeout(app.location.googleCodeInterval);
+        app.location.googleCodeInterval = setTimeout(function () {
+          app.location.googleCodeMs = 5000; // -43.524915199999995,172.6373888
+
+          var lat = String(app.location.current.point.lat).split('.');
+          lat[1] = lat[1].substr(0, 5);
+          lat = lat.join('.');
+          var lng = String(app.location.current.point.lng).split('.');
+          lng[1] = lng[1].substr(0, 5);
+          lng = lng.join('.');
+          var url = '/app/router/google.php?geocode&latlng=' + lat + ',' + lng;
+          var exists = app.location.geocodes.filter(function (a) {
+            return a.lat == lat && a.lng == lng || a.lat == app.location.current.point.lat && a.lng == app.location.current.point.lng;
+          });
+
+          if (exists.length > 0) {
+            var ret = exists.pop().ret;
+            app.trigger('geolocation/found', ret);
+            cb && cb(ret);
+          } else {
+            app.location.lastGoogleAjax = _lib.ajax('get', url, null, function (data) {
+              var loc = JSON.parse(data);
+              if (!loc || !loc.results || loc.results.length == 0) return;
+              var address = loc.results.filter(function (a) {
+                return a.types[0] == 'street_address';
+              });
+              var city = loc.results.filter(function (a) {
+                return a.types.some(function (b) {
+                  return b == "locality";
+                });
+              });
+
+              if (city.length > 0) {
+                app.location.current.city = city[0].address_components[0].long_name;
+              }
+
+              if (address.length == 0) return;
+              var ret = {};
+              ret.name = address[0].address_components[1].long_name;
+              ret.obj = loc;
+              ret.point = address[0].geometry.location;
+              ret.longName = [address[0].address_components[0].long_name, address[0].address_components[1].long_name].join(' ');
+              app.location.geocodes.push({
+                lat: ret.point.lat,
+                lng: ret.point.lng,
+                ret: ret
+              });
+              var d = {
+                point: ret.point,
+                title: ret.name,
+                titleLong: ret.longName,
+                source: 'geocode'
+              };
+              app.location.current.change(d);
+              cb2 && cb2(ret);
+              app.trigger('geolocation/found', ret);
+              cb && cb(ret);
+            });
+          }
+        }, app.location.googleCodeMs);
+      }
+
+      if (app.location.current.source == 'default' || force === true) {
+        app.location.geo(googlecode);
+        return;
+      } else {
+        googlecode();
+      }
+    },
+    init: function init() {
+      app.location.remember = _storage.get('stored_locations') || [];
+
+      if (app.location.remember.some(function (a) {
+        return a["default"];
+      })) {
+        if (app.location.lastGoogleAjax) app.location.lastGoogleAjax.abort();
+        app.location.geoStop();
+        var item = app.location.remember.filter(function (a) {
+          return a["default"];
+        }).pop();
+        app.location.current.change(item);
+        var ret = {
+          name: item.title,
+          obj: item,
+          point: item.point,
+          longName: item.titleLong
+        };
+        app.trigger("geolocation/found", ret);
+        app.trigger("geolocation/changed", app.location.current);
+        app.trigger("geolocation/search");
+        app.trigger("map/center");
+      } else {
+        app.location.geo();
+      }
+
+      app.on('reverselocation', function (cb, location) {
+        var url = '/app/router/google.php?geocode&address=' + location;
+
+        _lib.ajax('get', url, null, function (data) {
+          var loc = JSON.parse(data);
+
+          if (loc.results && loc.results.length > 0) {
+            cb(loc.results[0].geometry.location);
+          }
+        });
+      });
+    }
+  };
+  var _queue = {
+    list: [],
+    inited: false,
+    add: function add(call) {
+      var _this11 = this;
+
+      var id = new Date().valueOf();
+      this.list.push({
+        id: id,
+        obj: call
+      });
+      call.addEventListener("load", function () {
+        _this11.list = _this11.list.filter(function (a) {
+          a.id != id;
+        });
+      });
+    },
+    init: function init() {
+      var _this12 = this;
+
+      app.on("route", function () {
+        _this12.list.forEach(function (a) {
+          a.obj.abort();
+        });
+
+        _this12.list = [];
+      });
+    }
+  };
+  var _featured = {
+    nodes: [],
+    "static": [],
+    getNodes: function getNodes() {
+      return this.nodes = Object.keys(app.pages).reduce(function (r, a) {
+        return r.concat(app.pages[a].nodes.filter(function (b) {
+          return b.meta.featured;
+        }));
+      }, []);
+    },
+    getStatic: function getStatic() {
+      return this.nodes = app.pages.featured.nodes.reduce(function (r, a) {
+        return r.concat([a.options]);
+      }, []);
+    }
+  };
+  window.app = riot.observable({
+    favs: _favs,
+    header: _header,
+    menu: _menu,
+    pages: _pages,
+    api: _api,
+    gmap: _gmap,
+    tags: {},
+    routed: _routed,
+    state: _state,
+    session: _session,
+    storage: _storage,
+    mapkeys: _mapkeys,
+    journies: _journies,
+    timeouts: {},
+    location: _location,
+    alert: _alert,
+    updates: _updates,
+    queue: _queue,
+    featured: _featured,
+    maplegend: _maplegend,
+    version: {
+      v: 0,
+      //
+      refreshNeeded: false
+    },
+    googleApiKey: window.config.googleApi,
+    //'AIzaSyC6wVl6SVn1bZdvmSDWW_5Mdrn2OhKef3w',
+    googleClientId: '700402335031-bcc9c1cfirjfuvrm16i8meko2p69lir0.apps.googleusercontent.com',
+    extend: extend,
+    setPages: function setPages(pages) {
+      app.pages = _pages = pages;
+      app.mapkeys.init();
+
+      _pages2menu(); //app.trigger("pages/loaded");
+
+    },
+    pulseRoute: _pulseRoute,
+    isDatasetActive: _isDatasetActive,
+    conf: _conf
+  });
+
+  var _modules = app.modules = {
+    add: function add(name, obj) {
+      return this[name] = obj;
+    },
+    get: function get(name) {
+      return this[name];
+    }
+  };
+
+  var _promise = app.promise = {};
+
+  (function () {
+    var $promise;
+
+    _promise.google = function () {
+      return $promise ? $promise : $promise = new Promise(function (resolve, reject) {
+        if (typeof google != "undefined") resolve(google);else $mn.loadGoogle(app.googleApiKey, function () {
+          window.app.gmap.init();
+        }, {
+          resolve: resolve
+        });
+      });
+    };
+  })();
+
+  (function () {
+    var $promise;
+
+    _promise.map = function () {
+      return $promise ? $promise : $promise = new Promise(function (resolve, reject) {
+        Promise.resolve(app.promise.google()).then(function () {
+          if ($mn && $mn.isMap()) {
+            resolve($mn.isMap());
+          } else {
+            app.one("map/ready", function () {
+              resolve($mn.init());
+            });
+          }
+        });
+      });
+    };
+  })();
+
+  (function () {
+    var $promise;
+
+    _promise.mapLayer = function () {
+      return $promise ? $promise : $promise = new Promise(function (resolve, reject) {
+        Promise.resolve(app.promise.map()).then(function () {
+          $mn.one("bounds/changed", function () {
+            resolve($mn.isMap());
+          });
+          $mn.one("map/idle", function () {
+            resolve($mn.isMap());
+          });
+        });
+      });
+    };
+  })();
+
+  (function () {
+    var $promise;
+
+    _promise.directions = function () {
+      return $promise ? $promise : $promise = new Promise(function (resolve, reject) {
+        if (_maps && _maps.directionsService) resolve(_maps.directionsService);else {
+          app.promise.google().then(function () {
+            _maps.directionsService = $mn.initDirectionService();
+            resolve(_maps.directionsService);
+          });
+        }
+      });
+    };
+  })();
+
+  _promise.location = function () {
+    return new Promise(function (resolve, reject) {
+      if (app.lastPosition) {
+        resolve(app.lastPosition);
+      } else {
+        app.on("geolocation/found", function () {
+          resolve(app.lastPosition);
+        });
+      }
+    });
+  };
+
+  function init() {
+    route.start();
+    app.on("route", function (data) {
+      var from = app.extend({}, _routed);
+      delete from.from;
+
+      for (var prop in _routed) {
+        if (_routed.hasOwnProperty(prop)) {
+          delete _routed[prop];
+        }
+      }
+
+      riot.util.misc.extend(_routed, data);
+      _routed.from = from;
+    });
+    app.lastUpdate = new Date() / 1000;
+    app.lastPulse = false;
+    app.debug = window.debug;
+    app.location.init();
+    app.favs.init();
+    return app;
+  }
+
+  ;
+  return init();
+}(riot, route);

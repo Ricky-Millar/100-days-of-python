@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MAH BLOG</title>
+</head>
+<body>
+  {% for post in all_posts: %}
+        {% if post['id'] == 2: %}
+        <h1>{{ post['title'] }}</h1>
+        <h1>{{ post['subtitle'] }}</h1>
+  {% endif %}
+  {% endfor %}
+
+
+</body>
+</html>
